@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 친구 - 당신의 감성적 동반자</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <div class="ai-avatar">
+                    <div class="avatar-circle">🤗</div>
+                    <div class="status-indicator online"></div>
+                </div>
+                <div class="header-info">
+                    <h1>AI 친구</h1>
+                    <p class="status-text">언제나 당신 곁에서 🌟</p>
+                </div>
+                <button class="settings-btn" id="settingsBtn">⚙️</button>
+            </div>
+        </header>
+
+        <main class="chat-container">
+            <div class="chat-messages" id="chatMessages">
+                <!-- 초기 메시지는 JavaScript에서 동적으로 추가됩니다 -->
+            </div>
+
+            <div class="quick-responses" id="quickResponses">
+                <button class="quick-btn" data-message="오늘 하루 힘들었어요">오늘 하루 힘들었어요</button>
+                <button class="quick-btn" data-message="기분이 좋아요!">기분이 좋아요! 😊</button>
+                <button class="quick-btn" data-message="조언이 필요해요">조언이 필요해요</button>
+                <button class="quick-btn" data-message="그냥 이야기하고 싶어요">그냥 이야기하고 싶어요</button>
+            </div>
+
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="messageInput" 
+                        placeholder="무슨 이야기를 나눠볼까요? 💭"
+                        rows="1"
+                        maxlength="500"
+                    ></textarea>
+                    <button class="send-btn" id="sendBtn" disabled>
+                        <span class="send-icon">📤</span>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    <span class="char-count" id="charCount">0/500</span>
+                </div>
+            </div>
+        </main>
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <span>AI 친구가 답변 중...</span>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal" id="settingsModal">
+            <div class="modal-header">
+                <h2>⚙️ 설정</h2>
+                <button class="close-btn" id="closeModal">✕</button>
+            </div>
+            <div class="modal-content">
+                <div class="setting-group">
+                    <label for="personality">AI 친구 성격</label>
+                    <select id="personality">
+                        <option value="warm">따뜻하고 다정한 친구</option>
+                        <option value="cheerful">쾌활하고 긍정적인 친구</option>
+                        <option value="wise">현명하고 조언해주는 친구</option>
+                        <option value="humorous">유머러스한 친구</option>
+                        <option value="counselor">전문 상담가 (가정/자녀 문제)</option>
+                    </select>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        전문 상담가 모드는 최신 정보 검색을 통해 전문적인 조언을 제공합니다.
+                    </small>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="theme">테마</label>
+                    <select id="theme">
+                        <option value="warm">따뜻한 테마</option>
+                        <option value="calm">차분한 테마</option>
+                        <option value="bright">밝은 테마</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="model">AI 모델</label>
+                    <select id="model">
+                        <option value="glm-4.6">GLM-4.6 (최신 고성능)</option>
+                        <option value="glm-4">GLM-4 (표준 안정)</option>
+                    </select>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        더 높은 성능을 위해 최신 모델을 권장합니다
+                    </small>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="authMethod">인증 방식</label>
+                    <select id="authMethod">
+                        <option value="apikey">API Key (간단)</option>
+                        <option value="jwt">JWT Token (보안 강화)</option>
+                    </select>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        JWT는 더 높은 보안을 제공하지만 설정이 복잡합니다
+                    </small>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="apiKey">Z.AI API 키</label>
+                    <input type="password" id="apiKey" placeholder="6e74659313a8456da1b4881d29dc098f.SgJrKDIG5qoTW9YO" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: var(--font-size-base);">
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        API 키는 안전하게 로컬에만 저장됩니다.
+                        <a href="https://z.ai/manage-apikey/apikey-list" target="_blank" style="color: var(--primary-color);">API 키 발급받기</a>
+                    </small>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="maxTokens">최대 토큰 수</label>
+                    <input type="range" id="maxTokens" min="100" max="16000" value="16000" step="100" style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+                        <span>100</span>
+                        <span id="tokenValue">16,000</span>
+                        <span>16,000</span>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="temperature">창의성 수준</label>
+                    <input type="range" id="temperature" min="0" max="2" value="0.8" step="0.1" style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 5px;">
+                        <span>정확함</span>
+                        <span id="tempValue">0.8</span>
+                        <span>창의적</span>
+                    </div>
+                </div>
+                
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="streamingEnabled" checked>
+                        스트리밍 응답 (실시간 표시)
+                    </label>
+                    <small style="color: #666; font-size: 12px; display: block; margin-top: 5px;">
+                        응답을 실시간으로 받아보세요 (더 빠른 경험)
+                    </small>
+                </div>
+                
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="soundEnabled" checked>
+                        알림 소리 켜기
+                    </label>
+                </div>
+                
+                <div class="setting-group">
+                    <button type="button" onclick="window.aiCompanion.showUsageStats()" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
+                        📊 사용량 통계
+                    </button>
+                    <button type="button" onclick="window.aiCompanion.showModelInfo()" style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
+                        🤖 모델 정보
+                    </button>
+                    <button type="button" onclick="window.aiCompanion.clearChatHistory()" style="background: #FF9800; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
+                        🗑️ 대화 기록 삭제
+                    </button>
+                    <button type="button" onclick="window.aiCompanion.resetAPISettings()" style="background: #f44336; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
+                        🔄 API 초기화
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-primary" id="saveSettings">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

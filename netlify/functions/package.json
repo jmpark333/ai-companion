@@ -1,0 +1,21 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for AI Companion Memory System",
+  "main": "memory.js",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "netlify",
+    "functions",
+    "supabase",
+    "memory"
+  ],
+  "author": "",
+  "license": "MIT"
+}
