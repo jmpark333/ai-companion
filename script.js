@@ -1898,9 +1898,6 @@ class AICompanion {
             this.setupCounselingUI();
         }
 
-        // 단축키 추가
-        this.setupKeyboardShortcuts();
-
         // 대화 기록 파일 관리 버튼 추가
         this.setupChatHistoryButtons();
     }
@@ -3232,7 +3229,7 @@ AICompanion.prototype.setupMemoryMCP = function () {
                 } else {
                     console.log("Memory MCP 서버가 실행 중이 아닙니다.");
                     this.addMessage(
-                        'Memory MCP 서버가 실행 중이 아닙니다. 🤔\n\n**Memory MCP 서버 실행 방법:**\n\n1. **VS Code에서 Memory MCP 서버 실행:**\n   - VS Code를 열고 `Ctrl+Shift+P`를 누릅니다.\n   - "Memory MCP"를 검색하여 선택합니다.\n   - 또는 명령 팔레트(`Ctrl+Shift+P`)에서 `> Memory MCP: Start Server`를 입력합니다.\n\n2. **터미널에서 직접 실행:**\n   - 터미널을 열고 다음 명령을 입력합니다:\n   ```bash\n   npx @modelcontextprotocol/server-memory\n   ```\n\n3. **서버 확인:**\n   - 서버가 실행되면 http://localhost:3001 에서 접속할 수 있습니다.\n   - 브라우저에서 접속하여 Memory MCP 서버 상태를 확인할 수 있습니다.\n\nMemory MCP 서버를 실행하면 더 지능적인 대화 경험을 즐길 수 있습니다! 🧠',
+                        "Memory MCP 서버가 실행 중이 아닙니다. 🤔\n\n**Memory MCP 서버 실행 방법:**\n\n**터미널에서 직접 실행:**\n   - 터미널을 열고 다음 명령을 입력합니다:\n   ```bash\n   npx @modelcontextprotocol/server-memory\n   ```\n\n**서버 확인:**\n   - 서버가 실행되면 http://localhost:3001 에서 접속할 수 있습니다.\n   - 브라우저에서 접속하여 Memory MCP 서버 상태를 확인할 수 있습니다.\n\nMemory MCP 서버를 실행하면 더 지능적인 대화 경험을 즐길 수 있습니다! 🧠",
                         "ai",
                     );
                 }
@@ -3380,7 +3377,7 @@ AICompanion.prototype.checkMemoryMCPServer = async function () {
     } else {
         console.log("⚠️ Memory MCP 서버에 연결할 수 없습니다.");
         this.addMessage(
-            '⚠️ Memory MCP 서버에 연결할 수 없습니다. 😅\n\nMemory MCP 서버를 시작하려면 VS Code에서 `Ctrl+Shift+P`를 누르고 "Memory MCP"를 검색하여 선택해주세요.\n\n또는 터미널에서 다음 명령을 실행하세요:\n```bash\nnpx @modelcontextprotocol/server-memory\n```\n\n서버가 시작되면 페이지를 새로고침해주세요. 🔄',
+            "⚠️ Memory MCP 서버에 연결할 수 없습니다. 😅\n\n터미널에서 다음 명령을 실행하세요:\n```bash\nnpx @modelcontextprotocol/server-memory\n```\n\n서버가 시작되면 페이지를 새로고침해주세요. 🔄",
             "ai",
         );
     }
@@ -3986,53 +3983,6 @@ window.setOpenAIKey = function (apiKey) {
         return true;
     }
     return false;
-};
-
-// AICompanion 클래스에 단축키 설정 기능 추가
-AICompanion.prototype.setupKeyboardShortcuts = function () {
-    document.addEventListener("keydown", (e) => {
-        // Ctrl+Shift+C: 상담가 모드로 빠르게 전환
-        if (e.ctrlKey && e.shiftKey && e.key === "C") {
-            e.preventDefault();
-            this.personalitySelect.value = "counselor";
-            this.saveSettings();
-            this.showNotification("상담가 모드로 전환되었습니다! 🧠");
-        }
-
-        // Ctrl+Shift+S: 대화 패턴 분석
-        if (e.ctrlKey && e.shiftKey && e.key === "S") {
-            e.preventDefault();
-            if (this.settings.personality === "counselor") {
-                this.providePersonalizedInsights();
-            }
-        }
-
-        // Ctrl+Shift+E: 감정 일기 표시
-        if (e.ctrlKey && e.shiftKey && e.key === "E") {
-            e.preventDefault();
-            if (this.settings.personality === "counselor") {
-                this.showEmotionJournal();
-            }
-        }
-
-        // Ctrl+Shift+R: 이완 기법 표시
-        if (e.ctrlKey && e.shiftKey && e.key === "R") {
-            e.preventDefault();
-            if (this.settings.personality === "counselor") {
-                this.showRelaxationTechniques();
-            }
-        }
-    });
-
-    // 단축키 안내 메시지 추가 (상담가 모드일 때만)
-    if (this.settings.personality === "counselor") {
-        setTimeout(() => {
-            this.addMessage(
-                "**단축키 안내:**\n• Ctrl+Shift+C: 상담가 모드로 전환\n• Ctrl+Shift+S: 대화 패턴 분석\n• Ctrl+Shift+E: 감정 일기\n• Ctrl+Shift+R: 이완 기법\n\n이 단축키들을 활용하여 더 편리하게 상담을 이용해보세요! 🎯",
-                "ai",
-            );
-        }, 1000);
-    }
 };
 
 // AICompanion 클래스에 대화 기록 파일 관리 버튼 추가
