@@ -405,18 +405,30 @@ class AICompanion {
         // EXA MCP 서버 연결 상태
         this.exaAvailable = false;
 
-        // Memory MCP 서버 연결 상태
+        // Memory 서버 연결 상태 (Supabase + Netlify Functions)
         this.memoryMCPAvailable = false;
-        // MemoryMCPClient 대신 NetlifyMemoryClient 사용
         this.memoryClient = new NetlifyMemoryClient();
 
-        // 연결 확인
+        // 연결 확인 및 자동 활성화
         this.memoryClient.checkConnection().then((connected) => {
             if (connected) {
-                console.log("✅ Memory 시스템 활성화");
+                console.log(
+                    "✅ Memory 시스템 활성화 - 대화 기억 기능 사용 가능",
+                );
                 this.memoryMCPAvailable = true;
+
+                // 사용자에게 Memory 활성화 알림 (첫 실행시에만)
+                const memoryNotified = localStorage.getItem("memory_notified");
+                if (!memoryNotified) {
+                    setTimeout(() => {
+                        this.showNotification(
+                            "🧠 대화 기억 기능이 활성화되었습니다!",
+                        );
+                        localStorage.setItem("memory_notified", "true");
+                    }, 2000);
+                }
             } else {
-                console.warn("⚠️ Memory 시스템 비활성화 (오프라인 모드)");
+                console.warn("⚠️ Memory 시스템 연결 실패 - 기본 대화 모드");
                 this.memoryMCPAvailable = false;
             }
         });
@@ -697,8 +709,8 @@ class AICompanion {
         ) {
             this.saveChatHistory();
 
-            // Memory MCP 서버가 연결되어 있으면 메모리에 자동 저장
-            if (this.memoryMCPAvailable && sender === "user") {
+            // Memory 서버가 연결되어 있으면 메모리에 자동 저장 (사용자 메시지와 AI 응답 모두)
+            if (this.memoryMCPAvailable) {
                 this.saveMessageToMemory(message).catch((err) => {
                     console.warn("Memory 저장 실패:", err);
                 });
@@ -712,11 +724,26 @@ class AICompanion {
     }
 
     async generateAIResponse(userMessage) {
-        // Memory에서 관련 이전 대화 검색
+        // Memory에서 관련 이전 대화 검색 - 더 적극적으로 활용
         let memoryContext = "";
         if (this.memoryMCPAvailable) {
             try {
-                // 사용자 메시지에서 키워드 추출
+                // 최근 대화 5개 가져오기
+                const recentConvs = await this.getRecentConversations(5);
+
+                if (recentConvs.length > 0) {
+                    memoryContext = "\n\n**최근 대화 기록 (참고용):**\n";
+                    recentConvs.forEach((conv, index) => {
+                        const content = conv.observations?.find((obs) =>
+                            obs.startsWith("내용:"),
+                        );
+                        if (content) {
+                            memoryContext += `${index + 1}. ${content.replace("내용: ", "")}\n`;
+                        }
+                    });
+                }
+
+                // 추가로 키워드 기반 검색
                 const keywords = this.extractKeywords(userMessage);
                 if (keywords.length > 0) {
                     const relatedConversations =
@@ -724,25 +751,24 @@ class AICompanion {
                             keywords.join(" "),
                         );
                     if (relatedConversations.length > 0) {
-                        memoryContext = "\n\n**이전 대화 맥락:**\n";
+                        memoryContext += "\n**관련 이전 대화:**\n";
                         relatedConversations
-                            .slice(0, 3)
+                            .slice(0, 2)
                             .forEach((conv, index) => {
-                                const content = conv.observations.find((obs) =>
+                                const content = conv.observations?.find((obs) =>
                                     obs.startsWith("내용:"),
                                 );
-                                const timestamp = conv.observations.find(
-                                    (obs) => obs.startsWith("타임스탬프:"),
-                                );
                                 if (content) {
-                                    memoryContext += `${index + 1}. ${content.replace("내용: ", "")}\n`;
-                                    if (timestamp) {
-                                        memoryContext += `   (${new Date(timestamp.replace("타임스탬프: ", "")).toLocaleDateString()})\n`;
-                                    }
+                                    memoryContext += `- ${content.replace("내용: ", "")}\n`;
                                 }
                             });
                     }
                 }
+
+                console.log(
+                    "🧠 Memory 컨텍스트 로드 완료:",
+                    memoryContext ? "있음" : "없음",
+                );
             } catch (error) {
                 console.warn("Memory 컨텍스트 로딩 실패:", error);
             }
@@ -3369,17 +3395,11 @@ AICompanion.prototype.checkMemoryMCPServer = async function () {
     this.memoryMCPAvailable = isConnected;
 
     if (isConnected) {
-        console.log("✅ Memory MCP 서버와 연결되었습니다!");
-        this.addMessage(
-            '✅ Memory MCP 서버와 연결되었습니다! 이제 대화 기록을 저장하고 검색할 수 있습니다. 🧠\n\n**사용 가능한 명령어:**\n• "대화 기록을 Memory에 저장해줘" - 현재까지의 대화를 저장\n• "이전 대화 검색해줘" - Memory에서 이전 대화 검색\n• "최근 대화 요약해줘" - 대화 패턴 분석\n• "맞춤형 조언 해줘" - 과거 대화 기반 조언',
-            "ai",
-        );
+        console.log("✅ Memory 시스템 연결됨 - 자동으로 대화를 기억합니다");
+        // 자동으로 작동하므로 별도 메시지 불필요
     } else {
-        console.log("⚠️ Memory MCP 서버에 연결할 수 없습니다.");
-        this.addMessage(
-            "⚠️ Memory MCP 서버에 연결할 수 없습니다. 😅\n\n터미널에서 다음 명령을 실행하세요:\n```bash\nnpx @modelcontextprotocol/server-memory\n```\n\n서버가 시작되면 페이지를 새로고침해주세요. 🔄",
-            "ai",
-        );
+        console.log("⚠️ Memory 서버 연결 실패 - 일반 대화 모드로 작동");
+        // 오류 메시지 표시하지 않음 (서버 없어도 작동)
     }
 
     return isConnected;
@@ -3392,6 +3412,53 @@ AICompanion.prototype.getUserId = function () {
 
 // 메시지를 Memory에 저장
 AICompanion.prototype.saveMessageToMemory = async function (message) {
+    if (!this.memoryMCPAvailable) return false;
+
+    try {
+        // Supabase에 대화 저장
+        const saved = await this.memoryClient.saveConversation(
+            message.text,
+            message.text, // AI 응답인 경우에도 동일하게 저장
+            {
+                sender: message.sender,
+                emotion:
+                    this.memoryClient.detectEmotion?.(message.text) || "중립",
+                topic: this.memoryClient.detectTopic?.(message.text) || "일반",
+                timestamp: message.timestamp.toISOString(),
+            },
+        );
+
+        if (saved) {
+            console.log(
+                "💾 Memory 저장 성공:",
+                message.sender,
+                message.text.substring(0, 30) + "...",
+            );
+        }
+
+        return saved;
+    } catch (error) {
+        console.error("Memory 저장 오류:", error);
+        return false;
+    }
+};
+
+// 최근 대화 가져오기 함수 추가
+AICompanion.prototype.getRecentConversations = async function (limit = 5) {
+    if (!this.memoryMCPAvailable) return [];
+
+    try {
+        const conversations =
+            await this.memoryClient.getRecentConversations(limit);
+        return conversations || [];
+    } catch (error) {
+        console.error("최근 대화 조회 실패:", error);
+        return [];
+    }
+};
+
+// 레거시 Memory MCP 방식 (사용 안 함, 호환성 유지)
+AICompanion.prototype.saveMessageToMemoryLegacy = async function (message) {
     if (!this.memoryMCPAvailable) return false;
 
     try {
@@ -3412,7 +3479,11 @@ AICompanion.prototype.saveMessageToMemory = async function (message) {
         ];
 
         // 엔티티 생성
-        await this.memoryClient.createEntity(entityName, "대화", observations);
+        await this.memoryClient.createEntity?.(
+            entityName,
+            "대화",
+            observations,
+        );
 
         // 주제 엔티티와 관계 생성
         for (const topic of topics) {
@@ -3463,8 +3534,13 @@ AICompanion.prototype.searchConversationsInMemory = async function (query) {
     if (!this.memoryMCPAvailable) return [];
 
     try {
-        const results = await this.memoryClient.searchNodes(query);
-        return results.filter((node) => node.entityType === "대화");
+        // Supabase 기반 검색
+        const results = await this.memoryClient.searchConversations?.(query);
+        if (results) return results;
+
+        // 레거시 방식 fallback
+        const nodes = await this.memoryClient.searchNodes?.(query);
+        return nodes?.filter((node) => node.entityType === "대화") || [];
     } catch (error) {
         console.error("대화 검색 실패:", error);
         return [];
