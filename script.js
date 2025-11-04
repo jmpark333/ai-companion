@@ -643,10 +643,6 @@ class AICompanion {
         const messageDiv = document.createElement("div");
         messageDiv.className = `message ${sender}-message`;
 
-        const avatar = document.createElement("div");
-        avatar.className = "message-avatar";
-        avatar.textContent = sender === "ai" ? "🤗" : "😊";
-
         const content = document.createElement("div");
         content.className = "message-content";
 
@@ -662,9 +658,20 @@ class AICompanion {
         time.className = "message-time";
         time.textContent = this.getCurrentTime();
 
-        messageDiv.appendChild(avatar);
-        messageDiv.appendChild(content);
-        messageDiv.appendChild(time);
+        // AI 메시지는 세로 구조 (말풍선 + 시간)
+        if (sender === "ai") {
+            messageDiv.appendChild(content);
+            messageDiv.appendChild(time);
+        } else {
+            // 사용자 메시지는 기존 구조 (아바타 + 말풍선)
+            const avatar = document.createElement("div");
+            avatar.className = "message-avatar";
+            avatar.textContent = "😊";
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messageDiv.appendChild(time);
+        }
 
         this.chatMessages.appendChild(messageDiv);
 
