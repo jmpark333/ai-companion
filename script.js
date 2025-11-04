@@ -2270,17 +2270,53 @@ class AICompanion {
 
     // 상담가 모드 UI 제거
     removeCounselingUI() {
-        // 상담가 빠른 응답 버튼 제거
+        // 기존 빠른 응답 버튼 내용을 일반 모드로 복원
+        if (this.quickResponses) {
+            const quickResponsesContent = this.quickResponses.querySelector(
+                ".quick-responses-content",
+            );
+            if (quickResponsesContent) {
+                quickResponsesContent.innerHTML = `
+                    <button class="quick-btn" data-message="부부 관계가 힘들어요">부부 관계 힘듦</button>
+                    <button class="quick-btn" data-message="자녀 교육 고민이 있어요">자녀 교육 고민</button>
+                    <button class="quick-btn" data-message="가족 갈등을 해결하고 싶어요">가족 갈등 해결</button>
+                    <button class="quick-btn" data-message="스트레스를 관리하고 싶어요">스트레스 관리</button>
+                    <button class="quick-btn" data-message="대화 패턴을 분석해주세요">대화 패턴 분석</button>
+                    <button class="quick-btn" data-message="오늘 하루 힘들었어요">오늘 하루 힘들었어요</button>
+                    <button class="quick-btn" data-message="기분이 좋아요!">기분이 좋아요! 😊</button>
+                    <button class="quick-btn" data-message="조언이 필요해요">조언이 필요해요</button>
+                    <button class="quick-btn" data-message="그냥 이야기하고 싶어요">그냥 이야기하고 싶어요</button>
+                `;
+
+                // 헤더 텍스트도 원래대로
+                const headerTitle = this.quickResponses.querySelector(
+                    ".quick-responses-title",
+                );
+                if (headerTitle) {
+                    headerTitle.innerHTML = `
+                        <span>💬</span>
+                        <span>상담 주제</span>
+                    `;
+                }
+
+                // 이벤트 리스너 재설정
+                const quickBtns =
+                    quickResponsesContent.querySelectorAll(".quick-btn");
+                quickBtns.forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        const message = e.target.getAttribute("data-message");
+                        this.sendMessageWithText(message);
+                    });
+                });
+            }
+        }
+
+        // 상담가 빠른 응답 버튼 제거 (이전 버전 호환성)
         const counselingQuickContainer = document.querySelector(
             ".counseling-quick-responses",
         );
         if (counselingQuickContainer) {
             counselingQuickContainer.remove();
-        }
-
-        // 기존 빠른 응답 버튼 표시
-        if (this.quickResponses) {
-            this.quickResponses.style.display = "flex";
         }
 
         // 상담가 기능 버튼 제거
@@ -2301,12 +2337,54 @@ class AICompanion {
 
     // 상담가 모드 빠른 응답 버튼 추가
     addCounselingQuickResponses() {
-        // 기존 빠른 응답 버튼 숨기기
+        // 기존 빠른 응답 버튼이 있으면 내용만 변경
         if (this.quickResponses) {
-            this.quickResponses.style.display = "none";
+            const quickResponsesContent = this.quickResponses.querySelector(
+                ".quick-responses-content",
+            );
+            if (quickResponsesContent) {
+                // 기존 토글 구조 유지하면서 버튼만 교체
+                quickResponsesContent.innerHTML = `
+                    <button class="quick-btn" data-message="부부 관계가 힘들어요">부부 관계 힘듦</button>
+                    <button class="quick-btn" data-message="자녀 교육 문제로 고민이에요">자녀 교육 고민</button>
+                    <button class="quick-btn" data-message="가족 갈등을 해결하고 싶어요">가족 갈등 해결</button>
+                    <button class="quick-btn" data-message="스트레스가 너무 심해요">스트레스 관리</button>
+                    <button class="quick-btn" data-message="대화 패턴 분석해주세요">대화 패턴 분석</button>
+                    <button class="quick-btn" data-message="감정 일기 작성하기">감정 일기</button>
+                    <button class="quick-btn" data-message="이완 기법 알려주세요">이완 기법</button>
+                    <button class="quick-btn" data-message="소통 가이드 보여주세요">소통 가이드</button>
+                `;
+
+                // 헤더 텍스트도 변경
+                const headerTitle = this.quickResponses.querySelector(
+                    ".quick-responses-title",
+                );
+                if (headerTitle) {
+                    headerTitle.innerHTML = `
+                        <span>💬</span>
+                        <span>전문 상담 주제</span>
+                    `;
+                }
+
+                // 이벤트 리스너 재설정
+                const counselingBtns =
+                    quickResponsesContent.querySelectorAll(".quick-btn");
+                counselingBtns.forEach((btn) => {
+                    btn.addEventListener("click", (e) => {
+                        const message = e.target.getAttribute("data-message");
+                        if (message === "대화 패턴 분석해주세요") {
+                            this.providePersonalizedInsights();
+                        } else {
+                            this.sendMessageWithText(message);
+                        }
+                    });
+                });
+
+                return;
+            }
         }
 
-        // 상담가 모드 빠른 응답 버튼 컨테이너 생성
+        // 기존 구조가 없는 경우 (이전 버전 호환성)
         const counselingQuickContainer = document.createElement("div");
         counselingQuickContainer.className = "counseling-quick-responses";
         counselingQuickContainer.innerHTML = `
@@ -2317,7 +2395,6 @@ class AICompanion {
             <button class="counseling-quick-btn" data-message="대화 패턴 분석해주세요">대화 패턴 분석</button>
         `;
 
-        // 채팅 컨테이너에 추가
         const chatContainer = document.querySelector(".chat-container");
         if (chatContainer) {
             chatContainer.insertBefore(
@@ -2326,7 +2403,6 @@ class AICompanion {
             );
         }
 
-        // 이벤트 리스너 추가
         const counselingBtns = counselingQuickContainer.querySelectorAll(
             ".counseling-quick-btn",
         );
