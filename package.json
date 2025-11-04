@@ -1,27 +1,10 @@
 {
-  "name": "ai-companion-netlify",
+  "name": "ai-companion",
   "version": "1.0.0",
-  "description": "AI Companion with Memory - Netlify Deployment Version",
-  "main": "script.js",
-  "scripts": {
-    "dev": "netlify dev",
-    "build": "echo 'No build needed - static site'",
-    "deploy": "netlify deploy --prod"
-  },
-  "keywords": [
-    "ai",
-    "companion",
-    "chatbot",
-    "memory",
-    "netlify",
-    "supabase"
-  ],
-  "author": "",
-  "license": "MIT",
+  "description": "AI Companion with Memory",
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
-  },
-  "devDependencies": {
-    "netlify-cli": "^17.0.0"
+    "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
   }
 }
