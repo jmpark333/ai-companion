@@ -29,16 +29,30 @@
             </div>
 
             <div class="quick-responses" id="quickResponses">
-                <button class="quick-btn" data-message="오늘 하루 힘들었어요">오늘 하루 힘들었어요</button>
-                <button class="quick-btn" data-message="기분이 좋아요!">기분이 좋아요! 😊</button>
-                <button class="quick-btn" data-message="조언이 필요해요">조언이 필요해요</button>
-                <button class="quick-btn" data-message="그냥 이야기하고 싶어요">그냥 이야기하고 싶어요</button>
+                <div class="quick-responses-header" id="quickResponsesHeader">
+                    <div class="quick-responses-title">
+                        <span>💬</span>
+                        <span>상담 주제</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="quick-responses-content">
+                    <button class="quick-btn" data-message="부부 관계가 힘들어요">부부 관계 힘듦</button>
+                    <button class="quick-btn" data-message="자녀 교육 고민이 있어요">자녀 교육 고민</button>
+                    <button class="quick-btn" data-message="가족 갈등을 해결하고 싶어요">가족 갈등 해결</button>
+                    <button class="quick-btn" data-message="스트레스를 관리하고 싶어요">스트레스 관리</button>
+                    <button class="quick-btn" data-message="대화 패턴을 분석해주세요">대화 패턴 분석</button>
+                    <button class="quick-btn" data-message="오늘 하루 힘들었어요">오늘 하루 힘들었어요</button>
+                    <button class="quick-btn" data-message="기분이 좋아요!">기분이 좋아요! 😊</button>
+                    <button class="quick-btn" data-message="조언이 필요해요">조언이 필요해요</button>
+                    <button class="quick-btn" data-message="그냥 이야기하고 싶어요">그냥 이야기하고 싶어요</button>
+                </div>
             </div>
 
             <div class="input-container">
                 <div class="input-wrapper">
-                    <textarea 
-                        id="messageInput" 
+                    <textarea
+                        id="messageInput"
                         placeholder="무슨 이야기를 나눠볼까요? 💭"
                         rows="1"
                         maxlength="500"
@@ -84,7 +98,7 @@
                         전문 상담가 모드는 최신 정보 검색을 통해 전문적인 조언을 제공합니다.
                     </small>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="theme">테마</label>
                     <select id="theme">
@@ -93,7 +107,7 @@
                         <option value="bright">밝은 테마</option>
                     </select>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="model">AI 모델</label>
                     <select id="model">
@@ -104,7 +118,7 @@
                         더 높은 성능을 위해 최신 모델을 권장합니다
                     </small>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="authMethod">인증 방식</label>
                     <select id="authMethod">
@@ -115,7 +129,7 @@
                         JWT는 더 높은 보안을 제공하지만 설정이 복잡합니다
                     </small>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="apiKey">Z.AI API 키</label>
                     <input type="password" id="apiKey" placeholder="6e74659313a8456da1b4881d29dc098f.SgJrKDIG5qoTW9YO" style="width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; font-size: var(--font-size-base);">
@@ -124,7 +138,7 @@
                         <a href="https://z.ai/manage-apikey/apikey-list" target="_blank" style="color: var(--primary-color);">API 키 발급받기</a>
                     </small>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="maxTokens">최대 토큰 수</label>
                     <input type="range" id="maxTokens" min="100" max="16000" value="16000" step="100" style="width: 100%;">
@@ -134,7 +148,7 @@
                         <span>16,000</span>
                     </div>
                 </div>
-                
+
                 <div class="setting-group">
                     <label for="temperature">창의성 수준</label>
                     <input type="range" id="temperature" min="0" max="2" value="0.8" step="0.1" style="width: 100%;">
@@ -144,7 +158,7 @@
                         <span>창의적</span>
                     </div>
                 </div>
-                
+
                 <div class="setting-group">
                     <label>
                         <input type="checkbox" id="streamingEnabled" checked>
@@ -154,14 +168,14 @@
                         응답을 실시간으로 받아보세요 (더 빠른 경험)
                     </small>
                 </div>
-                
+
                 <div class="setting-group">
                     <label>
                         <input type="checkbox" id="soundEnabled" checked>
                         알림 소리 켜기
                     </label>
                 </div>
-                
+
                 <div class="setting-group">
                     <button type="button" onclick="window.aiCompanion.showUsageStats()" style="background: #4CAF50; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
                         📊 사용량 통계
