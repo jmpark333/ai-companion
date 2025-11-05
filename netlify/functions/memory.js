@@ -83,6 +83,12 @@ exports.handler = async (event, context) => {
           })
         };
 
+      case '/context/save':
+        return await saveUserContext(body);
+
+      case '/context/get':
+        return await getUserContext(body);
+
       default:
         return {
           statusCode: 404,
@@ -423,6 +429,101 @@ async function saveSummary(body) {
     body: JSON.stringify({
       success: true,
       data: data[0]
+    })
+  };
+}
+
+// 사용자 컨텍스트 저장
+async function saveUserContext(body) {
+  const { userId, contextType, contextData } = body;
+
+  if (!userId || !contextType || !contextData) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: '필수 필드가 누락되었습니다.'
+      })
+    };
+  }
+
+  const { data, error } = await supabase
+    .from('user_contexts')
+    .upsert([
+      {
+        user_id: userId,
+        context_type: contextType,
+        context_data: contextData,
+        updated_at: new Date().toISOString()
+      }
+    ])
+    .select();
+
+  if (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: error.message
+      })
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({
+      success: true,
+      data: data[0]
+    })
+  };
+}
+
+// 사용자 컨텍스트 조회
+async function getUserContext(body) {
+  const { userId, contextType } = body;
+
+  if (!userId) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: 'userId가 필요합니다.'
+      })
+    };
+  }
+
+  let query = supabase
+    .from('user_contexts')
+    .select('*')
+    .eq('user_id', userId);
+
+  if (contextType) {
+    query = query.eq('context_type', contextType);
+  }
+
+  const { data, error } = await query.order('updated_at', { ascending: false });
+
+  if (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: error.message
+      })
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({
+      success: true,
+      data: data || []
     })
   };
 }

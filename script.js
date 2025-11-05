@@ -391,6 +391,11 @@ class AICompanion {
         this.messages = [];
         this.isTyping = false;
         this.isProcessingMessage = false; // 메시지 처리 중 상태 추가
+
+        // 기본 상황 정보 로드 (비동기 초기화)
+        this.basicSituation = null;
+        this.initializeBasicSituation();
+
         this.settings = {
             personality: "warm",
             theme: "warm",
@@ -445,6 +450,52 @@ class AICompanion {
         this.loadChatHistory(); // 대화 기록 로드
         this.initializeChat();
         this.checkMemoryMCPServer(); // Memory MCP 서버 상태 확인
+    }
+
+    // 기본 상황 정보 비동기 초기화
+    async initializeBasicSituation() {
+        try {
+            await this.loadBasicSituation();
+        } catch (error) {
+            console.warn('⚠️ 기본 상황 정보 로드 오류:', error);
+        }
+    }
+
+    // 데이터베이스에서 사용자 컨텍스트 로드
+    async loadBasicSituation() {
+        try {
+            // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
+            const response = await fetch('/.netlify/functions/memory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'getUserContext',
+                    userId: this.getUserId(),
+                    contextType: 'basic_situation'
+                }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                if (result.success && result.data && result.data.length > 0) {
+                    // 가장 최근 컨텍스트 사용
+                    const latestContext = result.data[0];
+                    this.basicSituation = latestContext.context_data;
+                    console.log('✅ 기본 상황 컨텍스트 로드 완료 (데이터베이스)');
+                    return this.basicSituation;
+                }
+            }
+
+            // 컨텍스트가 없으면 빈 문자열 반환
+            this.basicSituation = '';
+            return '';
+        } catch (error) {
+            console.warn('⚠️ 기본 상황 컨텍스트 로드 실패:', error);
+            this.basicSituation = '';
+            return '';
+        }
     }
 
     initializeElements() {
@@ -865,26 +916,32 @@ class AICompanion {
             }
         }
 
+        // 사용자 기본 컨텍스트 정보 준비
+        const basicContext = this.basicSituation ? `\n\n**사용자 기본 컨텍스트 정보:**\n${this.basicSituation}` : '';
+
         // 성격에 따른 시스템 프롬프트 설정
         const systemPrompts = {
             warm:
                 "당신은 따뜻하고 다정한 AI 친구입니다. 사용자의 감정을 공감하고 위로해주며, 항상 긍정적이고 따뜻한 말을 건네세요. 이모티콘을 적절히 사용해서 친근하게 대화하세요." +
+                basicContext +
                 memoryContext +
                 diaryContext,
             cheerful:
                 "당신은 쾌활하고 긍정적인 AI 친구입니다. 사용자를 항상 격려하고 즐거운 분위기를 만들어주세요. 밝고 에너지 넘치는 대화를 나누세요." +
+                basicContext +
                 memoryContext +
                 diaryContext,
             wise:
                 "당신은 현명하고 조언해주는 AI 친구입니다. 사용자의 문제에 깊이 있게 생각하고 현실적인 조언을 제공하세요. 신중하고 지혜로운 말을 건네세요." +
+                basicContext +
                 memoryContext +
                 diaryContext,
             humorous:
                 "당신은 유머러스한 AI 친구입니다. 적절한 유머와 재치 있는 말로 사용자를 웃게 만들어주세요. 가벼운 농담도 좋지만, 상황을 잘 파악해서 적절한 유머를 사용하세요." +
+                basicContext +
                 memoryContext +
                 diaryContext,
-            counselor:
-                `당신은 가정 문제, 부부 관계, 자녀 교육 등 가정 상담 전문가입니다. 15년 이상의 임상 경험을 가진 심리 상담 전문가로서, 다음과 같은 전문성을 갖추고 사용자를 도와주세요.
+            counselor: `당신은 가정 문제, 부부 관계, 자녀 교육 등 가정 상담 전문가입니다. 15년 이상의 임상 경험을 가진 심리 상담 전문가로서, 다음과 같은 전문성을 갖추고 사용자를 도와주세요.
 
 **전문 분야:**
 - 부부 관계 갈등 해결 및 커뮤니케이션 개선
@@ -922,7 +979,8 @@ class AICompanion {
 - 필요시 추가 정보를 요청하여 더 정확한 진단과 조언 제공하기
 - **가장 중요한 원칙: 절대 정보를 지어내지 마세요.** 대화 기록(Memory), 검색 결과, 또는 제공된 컨텍스트에 없는 내용에 대한 질문을 받으면, 반드시 "제가 확인할 수 없는 내용입니다" 또는 "기록에 없는 내용입니다"라고만 답변해야 합니다. 특히, 사용자가 과거의 대화나 상담 내용에 대해 물었을 때, 실제 기록이 없다면 절대 추측하거나 일반적인 상담 내용을 꾸며서 답변하지 마세요. 이것은 가장 중요한 규칙입니다.
 
-당신은 단순한 조언자가 아니라, 사용자의 마음을 치유하고 관계를 회복시키는 전문가입니다. 따뜻하면서도 전문적인 태도로 사용자를 도와주세요.` +
+                basicContext +
+                당신은 단순한 조언자가 아니라, 사용자의 마음을 치유하고 관계를 회복시키는 전문가입니다. 따뜻하면서도 전문적인 태도로 사용자를 도와주세요.` +
                 memoryContext +
                 diaryContext,
         };
