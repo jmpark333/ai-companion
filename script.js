@@ -3827,19 +3827,10 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             if (results.length > 0) {
                 let response = `📚 **${keywords} 관련 이전 대화 내용:**\n\n`;
                 results.slice(0, 3).forEach((conv, index) => {
-                    const content = conv.observations.find((obs) =>
-                        obs.startsWith("내용:"),
-                    );
-                    const timestamp = conv.observations.find((obs) =>
-                        obs.startsWith("타임스탬프:"),
-                    );
-                    if (content) {
-                        response += `${index + 1}. ${content.replace("내용: ", "")}\n`;
-                        if (timestamp) {
-                            response += `   (${new Date(timestamp.replace("타임스탬프: ", "")).toLocaleString()})\n`;
-                        }
-                        response += "\n";
-                    }
+                    const date = new Date(conv.timestamp).toLocaleString('ko-KR');
+                    response += `${index + 1}. **사용자:** ${conv.user_message}\n`;
+                    response += `   **AI:** ${conv.ai_message ? conv.ai_message.substring(0, 100) + '...' : 'AI 응답'}\n`;
+                    response += `   (${date})\n\n`;
                 });
                 this.addMessage(response, "ai");
             } else {
@@ -3849,16 +3840,11 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
                 );
             }
         } else {
-            const results = await this.searchConversationsInMemory("대화");
+            const results = await this.memoryClient.getRecentConversations(5);
             if (results.length > 0) {
                 let response = `📚 **최근 대화 기록:**\n\n`;
-                results.slice(0, 5).forEach((conv, index) => {
-                    const content = conv.observations.find((obs) =>
-                        obs.startsWith("내용:"),
-                    );
-                    if (content) {
-                        response += `${index + 1}. ${content.replace("내용: ", "").substring(0, 100)}...\n`;
-                    }
+                results.forEach((conv, index) => {
+                    response += `${index + 1}. ${conv.user_message.substring(0, 80)}...\n`;
                 });
                 this.addMessage(response, "ai");
             } else {
