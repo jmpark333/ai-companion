@@ -119,13 +119,13 @@ exports.handler = async (event, context) => {
 async function saveConversation(body) {
   const { userId, userMessage, aiMessage, emotion, topic, personality } = body;
 
-  if (!userId || !userMessage || !aiMessage) {
+  if (!userId || !userMessage) {
     return {
       statusCode: 400,
       headers,
       body: JSON.stringify({
         success: false,
-        error: '필수 필드가 누락되었습니다.'
+        error: '필수 필드(userId, userMessage)가 누락되었습니다.'
       })
     };
   }
@@ -136,7 +136,7 @@ async function saveConversation(body) {
       {
         user_id: userId,
         user_message: userMessage,
-        ai_message: aiMessage,
+        ai_message: aiMessage || null,
         emotion: emotion || null,
         topic: topic || null,
         personality: personality || 'warm',
