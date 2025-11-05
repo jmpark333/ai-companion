@@ -330,6 +330,109 @@
                     </div>
 
                     <div class="setting-group">
+                        <label>📱 멀티 디바이스 동기화</label>
+                        <p
+                            style="
+                                font-size: 12px;
+                                color: #666;
+                                margin-bottom: 10px;
+                            "
+                        >
+                            다른 기기에서도 같은 감정일기를 보려면 사용자 ID를
+                            동기화하세요.
+                        </p>
+                        <div
+                            style="
+                                display: flex;
+                                gap: 10px;
+                                margin-bottom: 10px;
+                            "
+                        >
+                            <input
+                                type="text"
+                                id="userIdDisplay"
+                                readonly
+                                style="
+                                    flex: 1;
+                                    padding: 10px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 14px;
+                                    background: #f5f5f5;
+                                    font-family: monospace;
+                                "
+                                placeholder="사용자 ID"
+                            />
+                            <button
+                                type="button"
+                                onclick="navigator.clipboard.writeText(document.getElementById('userIdDisplay').value); alert('✅ 사용자 ID가 복사되었습니다!');"
+                                style="
+                                    background: #2196f3;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    white-space: nowrap;
+                                "
+                            >
+                                📋 복사
+                            </button>
+                        </div>
+                        <div style="display: flex; gap: 10px">
+                            <input
+                                type="text"
+                                id="userIdInput"
+                                placeholder="다른 기기의 사용자 ID 입력"
+                                style="
+                                    flex: 1;
+                                    padding: 10px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 14px;
+                                "
+                            />
+                            <button
+                                type="button"
+                                onclick="
+                                    const newId = document.getElementById('userIdInput').value.trim();
+                                    if (newId && window.emotionDiary) {
+                                        if (window.emotionDiary.setUserId(newId)) {
+                                            document.getElementById('userIdDisplay').value = newId;
+                                            document.getElementById('userIdInput').value = '';
+                                            alert('✅ 사용자 ID가 동기화되었습니다!\\n일기 목록을 확인하세요.');
+                                        }
+                                    } else {
+                                        alert('❌ 사용자 ID를 입력하세요.');
+                                    }
+                                "
+                                style="
+                                    background: #ff6b6b;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    white-space: nowrap;
+                                "
+                            >
+                                🔄 동기화
+                            </button>
+                        </div>
+                        <small
+                            style="
+                                color: #999;
+                                font-size: 11px;
+                                display: block;
+                                margin-top: 8px;
+                            "
+                        >
+                            💡 팁: 모바일에서 ID를 복사하고 데스크탑에서
+                            붙여넣기하면 동일한 일기를 볼 수 있습니다.
+                        </small>
+                    </div>
+
+                    <div class="setting-group">
                         <button
                             type="button"
                             onclick="window.aiCompanion.showUsageStats()"
@@ -590,5 +693,20 @@
         <script src="script.js?v=2024010501"></script>
         <script src="memory-netlify-client.js?v=2024010501"></script>
         <script src="js/emotion-diary.js?v=2024010501"></script>
+        <script>
+            // 사용자 ID 표시 초기화
+            document.addEventListener("DOMContentLoaded", () => {
+                setTimeout(() => {
+                    if (window.emotionDiary) {
+                        const userIdDisplay =
+                            document.getElementById("userIdDisplay");
+                        if (userIdDisplay) {
+                            userIdDisplay.value =
+                                window.emotionDiary.getCurrentUserId();
+                        }
+                    }
+                }, 1000);
+            });
+        </script>
     </body>
 </html>

@@ -9,44 +9,23 @@ class EmotionDiary {
         this.loadDiaries();
     }
 
-    // 사용자 ID 가져오기 (브라우저 지문 기반)
+    // 사용자 ID 가져오기 (고정 ID로 멀티 디바이스 지원)
     getUserId() {
         let userId = localStorage.getItem("emotion_diary_user_id");
         if (!userId) {
-            // 간단한 브라우저 지문 생성
-            userId = "user_" + this.generateFingerprint();
+            // 고정된 사용자 ID 생성 (한 번만 생성)
+            userId = "user_" + this.generateUniqueId();
             localStorage.setItem("emotion_diary_user_id", userId);
+            console.log("🆔 새 사용자 ID 생성:", userId);
         }
         return userId;
     }
 
-    // 브라우저 지문 생성
-    generateFingerprint() {
-        const nav = window.navigator;
-        const screen = window.screen;
-        const components = [
-            nav.userAgent,
-            nav.language,
-            screen.colorDepth,
-            screen.width + "x" + screen.height,
-            new Date().getTimezoneOffset(),
-            !!window.sessionStorage,
-            !!window.localStorage,
-        ];
-
-        const fingerprint = components.join("###");
-        return this.hashCode(fingerprint);
-    }
-
-    // 간단한 해시 함수
-    hashCode(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = (hash << 5) - hash + char;
-            hash = hash & hash;
-        }
-        return Math.abs(hash).toString(36);
+    // 고유 ID 생성 (랜덤 문자열)
+    generateUniqueId() {
+        const timestamp = Date.now().toString(36);
+        const randomStr = Math.random().toString(36).substring(2, 15);
+        return timestamp + randomStr;
     }
 
     // Supabase에서 일기 불러오기
@@ -636,6 +615,25 @@ class EmotionDiary {
     // 일기 개수 가져오기
     getDiaryCount() {
         return this.diaries.length;
+    }
+
+    // 사용자 ID 가져오기 (외부에서 접근 가능)
+    getCurrentUserId() {
+        return this.userId;
+    }
+
+    // 사용자 ID 설정 (멀티 디바이스 동기화용)
+    setUserId(newUserId) {
+        if (!newUserId) {
+            console.error("❌ 사용자 ID가 비어있습니다.");
+            return false;
+        }
+        this.userId = newUserId;
+        localStorage.setItem("emotion_diary_user_id", newUserId);
+        console.log("✅ 사용자 ID 변경:", newUserId);
+        // 일기 다시 로드
+        this.loadDiaries();
+        return true;
     }
 
     // 일기 통계
