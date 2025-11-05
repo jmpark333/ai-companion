@@ -2385,6 +2385,15 @@ class AICompanion {
 
         // 대화 기록 파일 관리 버튼 추가
         this.setupChatHistoryButtons();
+
+        // 개인 컨텍스트가 있으면 첫 메시지로 자동 전송
+        if (this.basicSituation && this.basicSituation.trim().length > 0) {
+            // 약간의 딜레이를 주어 환영 메시지가 먼저 표시되도록 함
+            setTimeout(() => {
+                const contextMessage = `(자동 전송된 컨텍스트)\n${this.basicSituation}`;
+                this.sendMessageWithText(contextMessage);
+            }, 1000);
+        }
     }
 
     // 대화 기록 저장
