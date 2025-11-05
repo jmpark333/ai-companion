@@ -244,19 +244,36 @@ class EmotionDiary {
         this.currentDiaryId = diaryId;
         const diary = this.diaries.find((d) => d.id === diaryId);
 
-        if (!diary) return;
+        console.log("📖 상세보기 일기:", diary);
+
+        if (!diary) {
+            console.error("❌ 일기를 찾을 수 없습니다:", diaryId);
+            return;
+        }
 
         this.closeListModal();
 
         const detailContent = document.getElementById("diaryDetailContent");
         if (detailContent) {
+            const emotionalMoment = diary.emotionalMoment || "(작성 안 함)";
+            const emotionCause = diary.emotionCause || "(작성 안 함)";
+            const copingMethod = diary.copingMethod || "(작성 안 함)";
+            const selfComfort = diary.selfComfort || "(작성 안 함)";
+
+            console.log("📝 렌더링 데이터:", {
+                emotionalMoment,
+                emotionCause,
+                copingMethod,
+                selfComfort,
+            });
+
             detailContent.innerHTML = `
                 <div class="diary-detail-section">
                     <span class="diary-detail-label">
                         <span class="emoji">💭</span>
                         감정적으로 흔들렸던 순간 나의 마음
                     </span>
-                    <div class="diary-detail-content">${this.escapeHtml(diary.emotionalMoment)}</div>
+                    <div class="diary-detail-content">${this.escapeHtml(emotionalMoment)}</div>
                 </div>
 
                 <div class="diary-detail-section">
@@ -264,7 +281,7 @@ class EmotionDiary {
                         <span class="emoji">🔍</span>
                         감정의 원인을 탐구하기
                     </span>
-                    <div class="diary-detail-content">${this.escapeHtml(diary.emotionCause)}</div>
+                    <div class="diary-detail-content">${this.escapeHtml(emotionCause)}</div>
                 </div>
 
                 <div class="diary-detail-section">
@@ -272,7 +289,7 @@ class EmotionDiary {
                         <span class="emoji">🌿</span>
                         감정을 다루기 위해 대처한 방법
                     </span>
-                    <div class="diary-detail-content">${this.escapeHtml(diary.copingMethod)}</div>
+                    <div class="diary-detail-content">${this.escapeHtml(copingMethod)}</div>
                 </div>
 
                 <div class="diary-detail-section">
@@ -280,7 +297,7 @@ class EmotionDiary {
                         <span class="emoji">💝</span>
                         따뜻한 자기 위로
                     </span>
-                    <div class="diary-detail-content">${this.escapeHtml(diary.selfComfort)}</div>
+                    <div class="diary-detail-content">${this.escapeHtml(selfComfort)}</div>
                 </div>
 
                 ${
