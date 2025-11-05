@@ -3507,15 +3507,56 @@ AICompanion.prototype.saveConversationPair = async function (userMessage, aiMess
     }
 };
 
-// 개별 메시지를 Memory에 저장 (호환성 유지)
+// 개별 메시지를 Memory에 저장 (USER 메시지 전용)
 AICompanion.prototype.saveMessageToMemory = async function (message) {
     if (!this.memoryMCPAvailable) return false;
+    if (message.sender !== "user") return false; // 사용자 메시지 فقط 저장
 
     try {
-        // Supabase에 대화 저장 (개별 메시지)
+        // 시스템 메시지 및 자동 응답 필터링
+        const text = message.text || '';
+        const isSystemMessage =
+            text.includes('🔄 자동으로 응답을 이어받겠습니다') ||
+            text.includes('계속해서 응답을 받으시겠습니까') ||
+            text.includes('계속해') ||
+            text.includes('Memory') ||
+            text.includes('기록') ||
+            text.includes('저장') ||
+            text.includes('삭제') ||
+            text.includes('조회') ||
+            text.includes('검색') ||
+            text.includes('분석') ||
+            text.includes('요약') ||
+            text.includes('조정') ||
+            text.includes('자동') ||
+            text.includes('계속') ||
+            text.includes('이어받') ||
+            text.includes('기억') ||
+            text.includes('저장된') ||
+            text.includes('대화 기록') ||
+            text.includes('패턴 분석') ||
+            text.includes('분석 결과') ||
+            text.includes('대화 내용') ||
+            text.includes('관련 대화') ||
+            text.includes('Memory에서') ||
+            text.includes('조회하고 있습니다') ||
+            text.includes('저장하고 있습니다') ||
+            text.includes('삭제하고 있습니다') ||
+            text.includes('검색하고 있습니다') ||
+            text.includes('분석하고 있습니다') ||
+            text.includes('확인하고 있습니다') ||
+            text.includes('준비하고 있습니다');
+
+        // 시스템 메시지는 저장하지 않음
+        if (isSystemMessage) {
+            console.log('📚 시스템 메시지이므로 Memory 저장하지 않음:', text.substring(0, 50));
+            return false;
+        }
+
+        // 사용자 메시지만 저장 (ai_message는 비워둠 - AI 응답을 기다림)
         const saved = await this.memoryClient.saveConversation(
             message.text,
-            message.text, // AI 응답인 경우에도 동일하게 저장
+            null, // AI 응답은 아직 없음 (나중에 saveConversationPair에서 채워짐)
             {
                 sender: message.sender,
                 emotion: this.memoryClient.detectEmotion?.(message.text) || "중립",
@@ -3526,8 +3567,7 @@ AICompanion.prototype.saveMessageToMemory = async function (message) {
 
         if (saved) {
             console.log(
-                "💾 Memory 저장 성공:",
-                message.sender,
+                "💾 Memory 사용자 메시지 저장 성공:",
                 message.text.substring(0, 30) + "...",
             );
         }
