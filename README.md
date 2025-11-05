@@ -10,6 +10,7 @@
 
 - 🤖 **Z.AI API** - GLM-4.6 최신 AI 모델
 - 🧠 **Memory 시스템** - Supabase 기반 대화 기억
+- 📖 **감정 일기** - 감정 기록 및 관리 기능 ⭐ NEW
 - ☁️ **서버리스** - Netlify Functions 사용
 - 🎨 **아름다운 UI** - 반응형 디자인
 - 📊 **대화 분석** - 감정/주제 자동 감지
@@ -51,6 +52,8 @@ ai-companion-netlify/
 ├── style.css                       # 스타일
 ├── script.js                       # 메인 로직 (수정 필요!)
 ├── memory-netlify-client.js       # Memory 클라이언트 ⭐
+├── js/
+│   └── emotion-diary.js           # 감정 일기 관리 ⭐ NEW
 ├── netlify.toml                    # Netlify 설정
 ├── netlify/functions/
 │   ├── memory.js                   # Memory API
@@ -59,6 +62,7 @@ ai-companion-netlify/
     ├── START.md                    # 빠른 시작
     ├── NETLIFY_DEPLOYMENT_GUIDE.md # 상세 가이드
     ├── CHECKLIST.md                # 체크리스트
+    ├── EMOTION_DIARY_GUIDE.md      # 감정 일기 가이드 ⭐ NEW
     └── PROJECT_STRUCTURE.md        # 구조 설명
 ```
 

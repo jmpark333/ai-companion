@@ -1702,7 +1702,10 @@ class AICompanion {
     // 설정 관련 메서드
     openSettings() {
         alert("Settings button clicked!"); // DEBUG
-        this.modalOverlay.classList.add("show");
+        this.modalOverlay.style.display = "flex";
+        setTimeout(() => {
+            this.modalOverlay.classList.add("active");
+        }, 10);
         document.body.style.overflow = "hidden";
 
         // 현재 설정 값으로 폼 요소 초기화
@@ -1722,7 +1725,10 @@ class AICompanion {
     }
 
     closeSettings() {
-        this.modalOverlay.classList.remove("show");
+        this.modalOverlay.classList.remove("active");
+        setTimeout(() => {
+            this.modalOverlay.style.display = "none";
+        }, 300);
         document.body.style.overflow = "";
     }
 
