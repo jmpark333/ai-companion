@@ -3858,10 +3858,10 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
         return true;
     }
 
-    // "이전 대화 검색해줘"
+    // "이전 대화 검색해줘" - Memory 관련 키워드가 있을 때만
     if (
-        message.includes("검색") &&
-        (message.includes("이전") || message.includes("과거"))
+        (message.includes("memory") || message.includes("기록") || message.includes("저장된")) &&
+        message.includes("검색")
     ) {
         this.addMessage(
             "Memory에서 이전 대화 내용을 검색하고 있습니다... 🔍",
@@ -3870,7 +3870,7 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
 
         // 키워드 추출 (주제어 제외)
         const keywords = message
-            .replace(/검색|이전|과거|대화|내용/gi, "")
+            .replace(/memory|기록|저장된|검색|이전|과거|대화|내용/gi, "")
             .trim();
 
         if (keywords.length > 0) {
@@ -3922,16 +3922,79 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
         return true;
     }
 
-    // "최근 대화 요약해줘"
+    // "이전 대화 내용을 알려줘" - Memory 조회 전용 ( Memory 키워드 필수 )
     if (
-        message.includes("요약") &&
-        (message.includes("최근") || message.includes("대화"))
+        (message.includes("memory") || message.includes("기록") || message.includes("저장된") || message.includes("뭐") || message.includes("어떤")) &&
+        (message.includes("보여줘") || message.includes("봐줘") || message.includes("내용") || message.includes("있어"))
     ) {
-        this.addMessage("최근 대화 패턴을 분석하고 있습니다... 📊", "ai");
+        this.addMessage(
+            "Memory에 저장된 대화 기록을 조회하고 있습니다... 📚",
+            "ai",
+        );
+
+        try {
+            const graph = await this.memoryClient.readGraph();
+            if (graph && graph.entities && graph.entities.length > 0) {
+                let response = "📚 **Memory에 저장된 대화 기록:**\n\n";
+                const conversationEntities = graph.entities.filter(
+                    (e) => e.entityType === "대화"
+                );
+
+                if (conversationEntities.length > 0) {
+                    conversationEntities.forEach((entity, index) => {
+                        const contentObs = entity.observations.find((obs) =>
+                            obs.startsWith("내용:"),
+                        );
+                        const senderObs = entity.observations.find((obs) =>
+                            obs.startsWith("송신자:"),
+                        );
+                        const timeObs = entity.observations.find((obs) =>
+                            obs.startsWith("타임스탬프:"),
+                        );
+
+                        if (contentObs) {
+                            const sender = senderObs
+                                ? senderObs.replace("송신자: ", "")
+                                : "알 수 없음";
+                            const time = timeObs
+                                ? new Date(
+                                      timeObs.replace("타임스탬프: ", "")
+                                  ).toLocaleString()
+                                : "시간 정보 없음";
+                            const content = contentObs.replace("내용: ", "");
+                            response += `**[메시지 ${index + 1}]**\n`;
+                            response += `**보낸 사람:** ${sender}\n`;
+                            response += `**시간:** ${time}\n`;
+                            response += `**내용:** ${content}\n\n`;
+                        }
+                    });
+                } else {
+                    response += "저장된 대화 기록이 없습니다.";
+                }
+                this.addMessage(response, "ai");
+            } else {
+                this.addMessage(
+                    "아직 Memory에 저장된 기록이 없습니다. 먼저 대화를 나눠보세요! 😊",
+                    "ai",
+                );
+            }
+        } catch (error) {
+            console.error("Memory 조회 실패:", error);
+            this.addMessage("Memory 조회 중 오류가 발생했습니다. 😥", "ai");
+        }
+        return true;
+    }
+
+    // "최근 대화 요약해줘" - Memory 관련 키워드가 있을 때만 Memory 패턴 분석 실행
+    if (
+        (message.includes("memory") || message.includes("기록") || message.includes("저장된")) &&
+        message.includes("요약")
+    ) {
+        this.addMessage("Memory에서 최근 대화 패턴을 분석하고 있습니다... 📊", "ai");
 
         const summary = await this.summarizeConversationsInMemory();
         if (summary) {
-            let response = `📊 **대화 패턴 분석 결과**\n\n`;
+            let response = `📊 **Memory 기반 대화 패턴 분석 결과**\n\n`;
             response += `• 총 대화 횟수: ${summary.totalConversations}회\n`;
             response += `• 최근 분석 대화: ${summary.recentConversations}개\n\n`;
 
@@ -3953,17 +4016,21 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             this.addMessage(response, "ai");
         } else {
             this.addMessage(
-                "대화 분석을 위한 데이터가 부족합니다. 더 많은 대화를 나눠보세요! 😊",
+                "Memory 분석을 위한 데이터가 부족합니다. 더 많은 대화를 나눠보세요! 😊",
                 "ai",
             );
         }
         return true;
     }
 
-    // "맞춤형 조언 해줘"
-    if (message.includes("맞춤형") && message.includes("조언")) {
+    // "맞춤형 조언 해줘" - Memory 관련 키워드가 있을 때만 Memory 기반 조언 제공
+    if (
+        (message.includes("memory") || message.includes("기록") || message.includes("저장된")) &&
+        message.includes("맞춤형") &&
+        message.includes("조언")
+    ) {
         this.addMessage(
-            "이전 대화 내용을 바탕으로 맞춤형 조언을 준비하고 있습니다... 🎯",
+            "Memory에 저장된 이전 대화 내용을 바탕으로 맞춤형 조언을 준비하고 있습니다... 🎯",
             "ai",
         );
 
@@ -3972,23 +4039,26 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             this.addMessage(advice, "ai");
         } else {
             this.addMessage(
-                "맞춤형 조언을 제공하기 위한 데이터가 부족합니다. 더 많은 대화를 나눠보세요! 😊",
+                "Memory 기반 맞춤형 조언을 제공하기 위한 데이터가 부족합니다. 더 많은 대화를 나눠보세요! 😊",
                 "ai",
             );
         }
         return true;
     }
 
-    // "전체 기록 보기"
-    if (message.includes("전체 기록 보기")) {
+    // "전체 기록 보기" - Memory 관련 키워드가 있을 때만 Memory 조회 기능 실행
+    if (
+        (message.includes("memory") || message.includes("기록") || message.includes("저장된")) &&
+        (message.includes("전체") || message.includes("전체 기록"))
+    ) {
         this.addMessage(
-            "Memory MCP 서버의 전체 기록을 조회하고 있습니다... 📜",
+            "Memory에 저장된 전체 기록을 조회하고 있습니다... 📜",
             "ai",
         );
         try {
             const graph = await this.memoryClient.readGraph();
             if (graph && graph.entities && graph.entities.length > 0) {
-                let response = "📜 **Memory MCP 서버 전체 기록:**\n\n";
+                let response = "📜 **Memory 전체 기록:**\n\n";
                 const conversationEntities = graph.entities.filter(
                     (e) => e.entityType === "대화",
                 );
@@ -4027,12 +4097,12 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
                 this.addMessage(response, "ai");
             } else {
                 this.addMessage(
-                    "저장된 기록이 없습니다. 텅 비어있어요. 🤔",
+                    "Memory에 저장된 기록이 없습니다. 텅 비어있어요. 🤔",
                     "ai",
                 );
             }
         } catch (error) {
-            console.error("전체 기록 조회 실패:", error);
+            console.error("Memory 전체 기록 조회 실패:", error);
             this.addMessage("기록을 조회하는 중 오류가 발생했습니다. 😥", "ai");
         }
         return true;
