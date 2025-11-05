@@ -12,7 +12,7 @@
 
 # Netlify Functions로의 요청은 SPA 리디렉션에서 제외합니다.
 [[redirects]]
-  from = "/.netlify/functions/*"
+  from = "/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
 
