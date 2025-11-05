@@ -3845,33 +3845,11 @@ AICompanion.prototype.getPersonalizedAdviceFromMemory = async function () {
 AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
     const message = userMessage.toLowerCase();
 
-    // "대화 기록을 memory에 저장해줘"
-    if (
-        message.includes("memory") &&
-        (message.includes("저장") || message.includes("기록"))
-    ) {
-        if (this.messages.length === 0) {
-            this.addMessage("저장할 대화 기록이 없습니다. 😊", "ai");
-            return true;
-        }
+    // *** Memory 관련 모든 명령어 제거 ***
+    // Memory 키워드가 들어와도 일반 대화로 처리됨
+    // Memory 기능은 설정에서 별도 버튼으로 구현됨
 
-        this.addMessage(
-            "Memory MCP 서버에 대화 기록을 저장하고 있습니다... 💾",
-            "ai",
-        );
-
-        let savedCount = 0;
-        for (const message of this.messages) {
-            const success = await this.saveMessageToMemory(message);
-            if (success) savedCount++;
-        }
-
-        this.addMessage(
-            `✅ 총 ${savedCount}개의 대화 기록이 Memory MCP 서버에 저장되었습니다! 🧠\n\n이제 이전 대화 내용을 바탕으로 더 정확한 조언을 제공할 수 있어요.`,
-            "ai",
-        );
-        return true;
-    }
+    return false; // Memory 명령어 없음 - 일반 대화로 처리
 
     // "이전 대화 검색해줘" - Memory 관련 키워드가 있을 때만
     if (
@@ -4229,8 +4207,183 @@ window.setOpenAIKey = function (apiKey) {
     return false;
 };
 
+// Memory 조회하기
+AICompanion.prototype.viewMemoryConversations = function () {
+    if (!this.memoryMCPAvailable) {
+        this.addMessage("Memory 서버가 연결되어 있지 않습니다. 설정에서 Memory 연결을 확인해주세요.", "ai");
+        return;
+    }
+
+    this.addMessage("Memory에 저장된 대화 기록을 조회하고 있습니다... 📚", "ai");
+
+    this.memoryClient.getRecentConversations(20).then(conversations => {
+        if (conversations && conversations.length > 0) {
+            let response = "📚 **Memory에 저장된 대화 기록:**\n\n";
+
+            // 실제 대화만 필터링 (Memory 명령어 응답 제외)
+            const realConversations = conversations.filter(conv => {
+                const userMsg = conv.user_message || '';
+                const aiMsg = conv.ai_message || '';
+
+                return !(
+                    userMsg.includes('Memory') ||
+                    userMsg.includes('기록') ||
+                    userMsg.includes('저장') ||
+                    userMsg.includes('삭제') ||
+                    userMsg.includes('조회') ||
+                    userMsg.includes('검색') ||
+                    aiMsg.includes('Memory') ||
+                    aiMsg.includes('기록') ||
+                    aiMsg.includes('저장') ||
+                    aiMsg.includes('삭제') ||
+                    aiMsg.includes('조회') ||
+                    aiMsg.includes('검색') ||
+                    aiMsg.includes('조회하고 있습니다') ||
+                    aiMsg.includes('저장하고 있습니다') ||
+                    aiMsg.includes('삭제하고 있습니다') ||
+                    aiMsg.includes('검색하고 있습니다') ||
+                    aiMsg.includes('패턴 분석') ||
+                    aiMsg.includes('분석 결과') ||
+                    aiMsg.includes('요약')
+                );
+            });
+
+            if (realConversations.length > 0) {
+                realConversations.forEach((conv, index) => {
+                    const date = new Date(conv.timestamp).toLocaleString('ko-KR');
+                    response += `**[대화 ${index + 1}]**\n`;
+                    response += `**사용자:** ${conv.user_message}\n`;
+                    response += `**AI:** ${conv.ai_message}\n`;
+                    response += `**시간:** ${date}\n`;
+                    if (conv.topic) {
+                        response += `**주제:** ${conv.topic}\n`;
+                    }
+                    if (conv.emotion) {
+                        response += `**감정:** ${conv.emotion}\n`;
+                    }
+                    response += "\n";
+                });
+
+                this.addMessage(response, "ai");
+            } else {
+                this.addMessage(
+                    "Memory에 저장된 실제 대화가 없습니다. 일반 대화만 저장되었고 Memory 명령어 응답은 저장되지 않았어요. 😊",
+                    "ai",
+                );
+            }
+        } else {
+            this.addMessage(
+                "Memory에 저장된 기록이 없습니다. 일반 대화를 나눠보세요! 😊",
+                "ai",
+            );
+        }
+    }).catch(error => {
+        console.error("Memory 조회 실패:", error);
+        this.addMessage("Memory 조회 중 오류가 발생했습니다. 😥", "ai");
+    });
+};
+
+// Memory 요약보기
+AICompanion.prototype.showMemorySummary = function () {
+    if (!this.memoryMCPAvailable) {
+        this.addMessage("Memory 서버가 연결되어 있지 않습니다. 설정에서 Memory 연결을 확인해주세요.", "ai");
+        return;
+    }
+
+    this.addMessage("Memory에서 대화 패턴을 분석하고 있습니다... 📊", "ai");
+
+    this.memoryClient.generateReport().then(report => {
+        if (report) {
+            let response = `📊 **Memory 기반 대화 분석 결과**\n\n`;
+            response += `• 총 대화 횟수: ${report.totalConversations || 0}회\n\n`;
+
+            if (report.topTopics && report.topTopics.length > 0) {
+                response += `🎯 **주요 대화 주제:**\n`;
+                const topTopics = Object.keys(report.topicDistribution || {}).sort(
+                    (a, b) => (report.topicDistribution[b] || 0) - (report.topicDistribution[a] || 0)
+                ).slice(0, 3);
+                topTopics.forEach((topic, index) => {
+                    response += `${index + 1}. ${topic} (${report.topicDistribution[topic] || 0}회)\n`;
+                });
+                response += "\n";
+            }
+
+            if (report.topEmotions && report.topEmotions.length > 0) {
+                response += `💭 **감정 패턴:**\n`;
+                const topEmotions = Object.keys(report.emotionDistribution || {}).sort(
+                    (a, b) => (report.emotionDistribution[b] || 0) - (report.emotionDistribution[a] || 0)
+                ).slice(0, 3);
+                topEmotions.forEach((emotion, index) => {
+                    response += `${index + 1}. ${emotion} (${report.emotionDistribution[emotion] || 0}회)\n`;
+                });
+            }
+
+            if (report.insights && report.insights.length > 0) {
+                response += `\n💡 **인사이트:**\n${report.insights.map(insight => `• ${insight}`).join('\n')}`;
+            }
+
+            this.addMessage(response, "ai");
+        } else {
+            this.addMessage(
+                "Memory 분석을 위한 데이터가 부족합니다. 더 많은 대화를 나눠보세요! 😊",
+                "ai",
+            );
+        }
+    }).catch(error => {
+        console.error("Memory 요약 실패:", error);
+        this.addMessage("Memory 요약 생성 중 오류가 발생했습니다. 😥", "ai");
+    });
+};
+
+// Memory 전체 삭제
+AICompanion.prototype.clearMemoryConversations = async function () {
+    if (!this.memoryMCPAvailable) {
+        this.addMessage("Memory 서버가 연결되어 있지 않습니다. 설정에서 Memory 연결을 확인해주세요.", "ai");
+        return false;
+    }
+
+    this.addMessage("Memory에 저장된 모든 대화 기록을 삭제하고 있습니다... 🗑️", "ai");
+
+    try {
+        const success = await this.memoryClient.clearAllConversations();
+
+        if (success) {
+            // 삭제 확인
+            const remainingData = await this.memoryClient.getRecentConversations(1);
+
+            if (!remainingData || remainingData.length === 0) {
+                this.addMessage(
+                    "✅ Memory 기록이 모두 삭제되었습니다! 🧹\n\n새로운 대화를 시작하세요. 이제 이전 기록 없이 깨끗한 상태입니다.",
+                    "ai",
+                );
+                return true;
+            } else {
+                this.addMessage(
+                    `⚠️ 일부 데이터가 남아있을 수 있습니다. (${remainingData.length}개)\n\n다시 시도해보시거나 새로고침 후 시도해주세요.`,
+                    "ai",
+                );
+                return false;
+            }
+        } else {
+            this.addMessage(
+                "❌ Memory 삭제에 실패했습니다. 😥\n\n다시 시도해보시거나 새로고침 후 시도해주세요.",
+                "ai",
+            );
+            return false;
+        }
+    } catch (error) {
+        console.error("Memory 삭제 실패:", error);
+        this.addMessage(
+            `❌ Memory 삭제 중 오류가 발생했습니다. 😥\n\n오류: ${error.message}\n\n다시 시도해보시거나 새로고침 후 시도해주세요.`,
+            "ai",
+        );
+        return false;
+    }
+};
+
 // AICompanion 클래스에 대화 기록 파일 관리 버튼 추가
 AICompanion.prototype.setupChatHistoryButtons = function () {
+    // 대화 기록 파일 관리 버튼
     const historyGroup = document.createElement("div");
     historyGroup.className = "setting-group";
     historyGroup.innerHTML = `
@@ -4243,10 +4396,28 @@ AICompanion.prototype.setupChatHistoryButtons = function () {
         </div>
     `;
 
+    // Memory 시스템 버튼 추가
+    const memoryGroup = document.createElement("div");
+    memoryGroup.className = "setting-group";
+    memoryGroup.innerHTML = `
+        <label>Memory 시스템 관리</label>
+        <small>AI Companion의 Memory(기억) 시스템을 관리할 수 있습니다.</small>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+            <button id="memoryViewBtn" class="btn-primary">📚 Memory 조회하기</button>
+            <button id="memorySummaryBtn" class="btn-primary">📊 Memory 요약보기</button>
+            <button id="memoryClearBtn" class="btn-primary" style="background-color: #e74c3c;">🗑️ Memory 전체 삭제</button>
+        </div>
+        <small style="color: #666; margin-top: 8px; display: block;">
+            💡 Memory는 AI가 이전 대화를 기억하고 분석하는 시스템입니다.
+        </small>
+    `;
+
     const modalContent = this.settingsModal.querySelector(".modal-content");
     if (modalContent) {
         modalContent.appendChild(historyGroup);
+        modalContent.appendChild(memoryGroup);
 
+        // 기존 대화 기록 버튼 이벤트
         document
             .getElementById("saveHistoryBtn")
             .addEventListener("click", () => {
@@ -4264,6 +4435,30 @@ AICompanion.prototype.setupChatHistoryButtons = function () {
             .getElementById("clearHistoryBtn")
             .addEventListener("click", () => {
                 this.clearChatHistory();
+            });
+
+        // Memory 버튼 이벤트 추가
+        document
+            .getElementById("memoryViewBtn")
+            .addEventListener("click", () => {
+                this.viewMemoryConversations();
+                this.closeSettings();
+            });
+
+        document
+            .getElementById("memorySummaryBtn")
+            .addEventListener("click", () => {
+                this.showMemorySummary();
+                this.closeSettings();
+            });
+
+        document
+            .getElementById("memoryClearBtn")
+            .addEventListener("click", async () => {
+                if (confirm("Memory에 저장된 모든 대화 기록을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.")) {
+                    await this.clearMemoryConversations();
+                    this.closeSettings();
+                }
             });
     }
 };
