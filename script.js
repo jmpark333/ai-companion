@@ -1069,26 +1069,9 @@ class AICompanion {
                         console.log("📚 Memory 시스템 명령어 응답이므로 저장하지 않음");
                     }
                 } else {
-                    // 사용자 메시지는 Memory 명령어가 아닌 경우에만 저장 (AI 응답을 기다림)
-                    const userMessage = message.text.toLowerCase();
-                    const isMemoryCommand = userMessage.includes("memory") ||
-                                            userMessage.includes("기록") ||
-                                            userMessage.includes("삭제") ||
-                                            userMessage.includes("지워") ||
-                                            userMessage.includes("비워") ||
-                                            userMessage.includes("초기화") ||
-                                            userMessage.includes("검색") ||
-                                            userMessage.includes("보여줘") ||
-                                            userMessage.includes("봐줘") ||
-                                            userMessage.includes("전체");
-
-                    if (!isMemoryCommand) {
-                        this.saveMessageToMemory(message).catch((err) => {
-                            console.warn("Memory 저장 실패:", err);
-                        });
-                    } else {
-                        console.log("📚 Memory 명령어 사용자 입력이므로 저장하지 않음");
-                    }
+                    // 사용자 메시지는 AI 응답 후 saveConversationPair를 통해 함께 저장되므로,
+                    // 여기서는 별도로 저장하지 않습니다.
+                    console.log("사용자 메시지 UI 추가. AI 응답 후 함께 저장될 예정입니다.");
                 }
             }
         }
