@@ -3564,13 +3564,10 @@ AICompanion.prototype.searchConversationsInMemory = async function (query) {
     if (!this.memoryMCPAvailable) return [];
 
     try {
-        // Supabase 기반 검색
-        const results = await this.memoryClient.searchConversations?.(query);
-        if (results) return results;
-
-        // 레거시 방식 fallback
-        const nodes = await this.memoryClient.searchNodes?.(query);
-        return nodes?.filter((node) => node.entityType === "대화") || [];
+        // NetlifyMemoryClient 기반 검색 (키워드 배열로 전달)
+        const keywords = this.extractKeywords(query);
+        const results = await this.memoryClient.searchConversations?.(keywords, 10);
+        return results || [];
     } catch (error) {
         console.error("대화 검색 실패:", error);
         return [];
@@ -3582,20 +3579,9 @@ AICompanion.prototype.searchConversationsByTopic = async function (topic) {
     if (!this.memoryMCPAvailable) return [];
 
     try {
-        const results = await this.memoryClient.searchNodes(topic);
-        const topicNodes = results.filter(
-            (node) => node.entityType === "주제" && node.name.includes(topic),
-        );
-
-        if (topicNodes.length > 0) {
-            // 해당 주제와 관련된 모든 대화 찾기
-            const conversations = await this.memoryClient.searchNodes("대화");
-            return conversations.filter((conv) =>
-                conv.observations.some((obs) => obs.includes(topic)),
-            );
-        }
-
-        return [];
+        // NetlifyMemoryClient에서는 키워드 검색 사용
+        const results = await this.memoryClient.searchConversations([topic], 20);
+        return results || [];
     } catch (error) {
         console.error("주제별 검색 실패:", error);
         return [];
@@ -3607,54 +3593,17 @@ AICompanion.prototype.summarizeConversationsInMemory = async function () {
     if (!this.memoryMCPAvailable) return null;
 
     try {
-        const graph = await this.memoryClient.readGraph();
-        if (!graph) return null;
+        // NetlifyMemoryClient에서는 generateReport 사용
+        const report = await this.memoryClient.generateReport();
+        if (!report) return null;
 
-        const userConversations = graph.entities.filter(
-            (entity) =>
-                entity.name.includes(this.userId) &&
-                entity.entityType === "대화",
-        );
-
-        // 최근 대화 10개만 요약
-        const recentConversations = userConversations
-            .sort((a, b) => {
-                const timeA = a.observations.find((obs) =>
-                    obs.includes("타임스탬프"),
-                );
-                const timeB = b.observations.find((obs) =>
-                    obs.includes("타임스탬프"),
-                );
-                return new Date(timeB) - new Date(timeA);
-            })
-            .slice(0, 10);
-
-        // 주제별 통계
-        const topicCount = {};
-        const emotionCount = {};
-
-        recentConversations.forEach((conv) => {
-            const topics = conv.observations.filter((obs) =>
-                obs.startsWith("주제:"),
-            );
-            topics.forEach((topic) => {
-                const topicName = topic.replace("주제: ", "");
-                topicCount[topicName] = (topicCount[topicName] || 0) + 1;
-            });
-
-            const emotions = conv.observations.filter((obs) =>
-                obs.startsWith("감정:"),
-            );
-            emotions.forEach((emotion) => {
-                const emotionName = emotion.replace("감정: ", "");
-                emotionCount[emotionName] =
-                    (emotionCount[emotionName] || 0) + 1;
-            });
-        });
+        // 주제별 통계와 감정별 통계를 기존 형식에 맞게 변환
+        const topicCount = report.topicDistribution || {};
+        const emotionCount = report.emotionDistribution || {};
 
         return {
-            totalConversations: userConversations.length,
-            recentConversations: recentConversations.length,
+            totalConversations: report.totalConversations || 0,
+            recentConversations: report.totalConversations || 0,
             topTopics: Object.keys(topicCount).sort(
                 (a, b) => topicCount[b] - topicCount[a],
             ),
@@ -3933,44 +3882,27 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
         );
 
         try {
-            const graph = await this.memoryClient.readGraph();
-            if (graph && graph.entities && graph.entities.length > 0) {
+            // NetlifyMemoryClient에서는 getRecentConversations 사용
+            const conversations = await this.memoryClient.getRecentConversations(20);
+
+            if (conversations && conversations.length > 0) {
                 let response = "📚 **Memory에 저장된 대화 기록:**\n\n";
-                const conversationEntities = graph.entities.filter(
-                    (e) => e.entityType === "대화"
-                );
 
-                if (conversationEntities.length > 0) {
-                    conversationEntities.forEach((entity, index) => {
-                        const contentObs = entity.observations.find((obs) =>
-                            obs.startsWith("내용:"),
-                        );
-                        const senderObs = entity.observations.find((obs) =>
-                            obs.startsWith("송신자:"),
-                        );
-                        const timeObs = entity.observations.find((obs) =>
-                            obs.startsWith("타임스탬프:"),
-                        );
+                conversations.forEach((conv, index) => {
+                    const date = new Date(conv.timestamp).toLocaleString('ko-KR');
+                    response += `**[메시지 ${index + 1}]**\n`;
+                    response += `**사용자:** ${conv.user_message}\n`;
+                    response += `**AI:** ${conv.ai_message}\n`;
+                    response += `**시간:** ${date}\n`;
+                    if (conv.topic) {
+                        response += `**주제:** ${conv.topic}\n`;
+                    }
+                    if (conv.emotion) {
+                        response += `**감정:** ${conv.emotion}\n`;
+                    }
+                    response += "\n";
+                });
 
-                        if (contentObs) {
-                            const sender = senderObs
-                                ? senderObs.replace("송신자: ", "")
-                                : "알 수 없음";
-                            const time = timeObs
-                                ? new Date(
-                                      timeObs.replace("타임스탬프: ", "")
-                                  ).toLocaleString()
-                                : "시간 정보 없음";
-                            const content = contentObs.replace("내용: ", "");
-                            response += `**[메시지 ${index + 1}]**\n`;
-                            response += `**보낸 사람:** ${sender}\n`;
-                            response += `**시간:** ${time}\n`;
-                            response += `**내용:** ${content}\n\n`;
-                        }
-                    });
-                } else {
-                    response += "저장된 대화 기록이 없습니다.";
-                }
                 this.addMessage(response, "ai");
             } else {
                 this.addMessage(
@@ -4056,44 +3988,27 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             "ai",
         );
         try {
-            const graph = await this.memoryClient.readGraph();
-            if (graph && graph.entities && graph.entities.length > 0) {
+            // NetlifyMemoryClient에서는 getRecentConversations 사용 (모든 대화)
+            const conversations = await this.memoryClient.getRecentConversations(100);
+
+            if (conversations && conversations.length > 0) {
                 let response = "📜 **Memory 전체 기록:**\n\n";
-                const conversationEntities = graph.entities.filter(
-                    (e) => e.entityType === "대화",
-                );
 
-                if (conversationEntities.length > 0) {
-                    conversationEntities.forEach((entity, index) => {
-                        const contentObs = entity.observations.find((obs) =>
-                            obs.startsWith("내용:"),
-                        );
-                        const senderObs = entity.observations.find((obs) =>
-                            obs.startsWith("송신자:"),
-                        );
-                        const timeObs = entity.observations.find((obs) =>
-                            obs.startsWith("타임스탬프:"),
-                        );
+                conversations.forEach((conv, index) => {
+                    const date = new Date(conv.timestamp).toLocaleString('ko-KR');
+                    response += `**[메시지 ${index + 1}]**\n`;
+                    response += `**사용자:** ${conv.user_message}\n`;
+                    response += `**AI:** ${conv.ai_message}\n`;
+                    response += `**시간:** ${date}\n`;
+                    if (conv.topic) {
+                        response += `**주제:** ${conv.topic}\n`;
+                    }
+                    if (conv.emotion) {
+                        response += `**감정:** ${conv.emotion}\n`;
+                    }
+                    response += "\n";
+                });
 
-                        if (contentObs) {
-                            const sender = senderObs
-                                ? senderObs.replace("송신자: ", "")
-                                : "알 수 없음";
-                            const time = timeObs
-                                ? new Date(
-                                      timeObs.replace("타임스탬프: ", ""),
-                                  ).toLocaleString()
-                                : "시간 정보 없음";
-                            const content = contentObs.replace("내용: ", "");
-                            response += `**[메시지 ${index + 1}]**\n`;
-                            response += `**보낸 사람:** ${sender}\n`;
-                            response += `**시간:** ${time}\n`;
-                            response += `**내용:** ${content}\n\n`;
-                        }
-                    });
-                } else {
-                    response += "저장된 대화 기록이 없습니다.";
-                }
                 this.addMessage(response, "ai");
             } else {
                 this.addMessage(
