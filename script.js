@@ -747,13 +747,12 @@ class AICompanion {
     async loadBasicSituation() {
         try {
             // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
-            const response = await fetch('/.netlify/functions/memory', {
+            const response = await fetch('/.netlify/functions/memory/context/get', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    action: 'getUserContext',
                     userId: this.getUserId(),
                     contextType: 'basic_situation'
                 }),
