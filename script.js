@@ -1286,33 +1286,39 @@ class AICompanion {
             // 전문 상담가 모드인 경우 전문 지식 베이스와 EXA 검색으로 관련 정보 수집
             if (this.settings.personality === "counselor") {
                 try {
-                    // 전문 지식 베이스에서 관련 정보 검색
-                    const knowledgeBase =
-                        this.getCounselingKnowledgeBase(userMessage);
+                    const personalKeywords = ["어머니", "아내", "딸", "아버지", "가족", "내", "나의", "저의"];
+                    const isPersonalQuery = personalKeywords.some(keyword => userMessage.includes(keyword));
 
-                    // EXA 검색으로 최신 정보 수집
-                    const searchResults = await this.searchWithExa(userMessage);
+                    // 개인적인 질문이 아닐 경우에만 웹 검색 수행
+                    if (!isPersonalQuery) {
+                        // 전문 지식 베이스에서 관련 정보 검색
+                        const knowledgeBase =
+                            this.getCounselingKnowledgeBase(userMessage);
 
-                    // 지식 베이스와 검색 결과 결합
-                    let additionalContext = "";
+                        // EXA 검색으로 최신 정보 수집
+                        const searchResults = await this.searchWithExa(userMessage);
 
-                    if (knowledgeBase) {
-                        additionalContext += `전문 상담 지식:\n${knowledgeBase}\n\n`;
-                    }
+                        // 지식 베이스와 검색 결과 결합
+                        let additionalContext = "";
 
-                    if (searchResults && searchResults.length > 0) {
-                        additionalContext += `최신 관련 정보:\n${searchResults.map((result) => `- ${result.title}: ${result.snippet}`).join("\n")}`;
-                    }
+                        if (knowledgeBase) {
+                            additionalContext += `전문 상담 지식:\n${knowledgeBase}\n\n`;
+                        }
 
-                    if (additionalContext) {
-                        messages = [
-                            {
-                                role: "system",
-                                content: `${systemPrompt}\n\n${additionalContext}`,
-                            },
-                            ...recentMessages,
-                            { role: "user", content: userMessage },
-                        ];
+                        if (searchResults && searchResults.length > 0) {
+                            additionalContext += `최신 관련 정보:\n${searchResults.map((result) => `- ${result.title}: ${result.snippet}`).join("\n")}`;
+                        }
+
+                        if (additionalContext) {
+                            messages = [
+                                {
+                                    role: "system",
+                                    content: `${systemPrompt}\n\n${additionalContext}`,
+                                },
+                                ...recentMessages,
+                                { role: "user", content: userMessage },
+                            ];
+                        }
                     }
                 } catch (searchError) {
                     console.warn(
