@@ -19,9 +19,9 @@ CREATE INDEX IF NOT EXISTS idx_emotion_diaries_tags ON emotion_diaries USING GIN
 -- user_id와 created_at 복합 인덱스
 CREATE INDEX IF NOT EXISTS idx_emotion_diaries_user_created ON emotion_diaries(user_id, created_at DESC);
 
--- 전체 텍스트 검색을 위한 인덱스
+-- 전체 텍스트 검색을 위한 인덱스 (영어 설정 사용)
 CREATE INDEX IF NOT EXISTS idx_emotion_diaries_search ON emotion_diaries
-USING GIN(to_tsvector('korean',
+USING GIN(to_tsvector('english',
     COALESCE(emotional_moment, '') || ' ' ||
     COALESCE(emotion_cause, '') || ' ' ||
     COALESCE(coping_method, '') || ' ' ||
@@ -167,23 +167,23 @@ BEGIN
         d.tags,
         d.created_at,
         ts_rank(
-            to_tsvector('korean',
+            to_tsvector('english',
                 COALESCE(d.emotional_moment, '') || ' ' ||
                 COALESCE(d.emotion_cause, '') || ' ' ||
                 COALESCE(d.coping_method, '') || ' ' ||
                 COALESCE(d.self_comfort, '')
             ),
-            plainto_tsquery('korean', p_search_term)
+            plainto_tsquery('english', p_search_term)
         ) as rank
     FROM emotion_diaries d
     WHERE d.user_id = p_user_id
     AND (
-        to_tsvector('korean',
+        to_tsvector('english',
             COALESCE(d.emotional_moment, '') || ' ' ||
             COALESCE(d.emotion_cause, '') || ' ' ||
             COALESCE(d.coping_method, '') || ' ' ||
             COALESCE(d.self_comfort, '')
-        ) @@ plainto_tsquery('korean', p_search_term)
+        ) @@ plainto_tsquery('english', p_search_term)
         OR p_search_term = ANY(d.tags)
     )
     ORDER BY rank DESC, d.created_at DESC;
