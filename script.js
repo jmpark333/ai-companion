@@ -1913,7 +1913,7 @@ class AICompanion {
             setTimeout(() => {
                 if (this.settings.personality === "counselor") {
                     this.addMessage(
-                        '다시 만나 반가워요. 😊 이전 대화를 기억하고 있어요. 계속해서 당신의 고민을 들어드리며 전문적인 조언을 제공해 드리겠습니다.\n\n**계속 상담하기:**\n• 이전 대화 내용 바탕으로 맞춤형 조언 제공\n• "대화 패턴 분석해주세요" 입력 가능\n• 감정 일기, 이완 기법, 소통 가이드 활용',
+                        '다시 만나 반가워요. 😊 이전 대화를 기억하고 있어요. 계속해서 당신의 고민을 들어드리며 전문적인 조언을 제공해 드리겠습니다.\n\n**계속 상담하기:**\n• 이전 대화 내용 바탕으로 맞춤형 조언 제공\n• "대화 패턴 분석해주세요" 입력 가능\n• 이완 기법, 소통 가이드 활용',
                         "ai",
                     );
                 } else {
@@ -2386,7 +2386,6 @@ class AICompanion {
                     <button class="quick-btn" data-message="가족 갈등을 해결하고 싶어요">가족 갈등 해결</button>
                     <button class="quick-btn" data-message="스트레스가 너무 심해요">스트레스 관리</button>
                     <button class="quick-btn" data-message="대화 패턴 분석해주세요">대화 패턴 분석</button>
-                    <button class="quick-btn" data-message="감정 일기 작성하기">감정 일기</button>
                     <button class="quick-btn" data-message="이완 기법 알려주세요">이완 기법</button>
                     <button class="quick-btn" data-message="소통 가이드 보여주세요">소통 가이드</button>
                 `;
@@ -2455,12 +2454,11 @@ class AICompanion {
     }
 
     // 상담가 모드 전용 기능 버튼 추가
+    // 상담 도구 버튼 추가 (감정 일기 제거됨)
     addCounselingTools() {
-        // 기능 버튼 컨테이너 생성
         const toolsContainer = document.createElement("div");
         toolsContainer.className = "counseling-tools";
         toolsContainer.innerHTML = `
-            <button class="counseling-tool-btn" id="emotionJournalBtn">📝 감정 일기</button>
             <button class="counseling-tool-btn" id="relaxationBtn">🧘 이완 기법</button>
             <button class="counseling-tool-btn" id="communicationGuideBtn">💬 소통 가이드</button>
         `;
@@ -2473,12 +2471,6 @@ class AICompanion {
 
         // 이벤트 리스너 추가
         document
-            .getElementById("emotionJournalBtn")
-            .addEventListener("click", () => {
-                this.showEmotionJournal();
-            });
-
-        document
             .getElementById("relaxationBtn")
             .addEventListener("click", () => {
                 this.showRelaxationTechniques();
@@ -2489,35 +2481,6 @@ class AICompanion {
             .addEventListener("click", () => {
                 this.showCommunicationGuide();
             });
-    }
-
-    // 감정 일기 표시
-    showEmotionJournal() {
-        const journalContent = `
-📝 **감정 일기**
-
-오늘의 감정을 기록해보세요. 감정 일기는 자신의 감정 패턴을 이해하고 관리하는 데 도움을 줍니다.
-
-**감정 체크리스트:**
-- 😊 기쁨
-- 😔 슬픔
-- 😡 화
-- 😰 불안
-- 😴 피곤
-- 🤔 고민
-- 😌 평온
-
-**오늘의 감정 기록 양식:**
-1. 현재 감정: (체크리스트에서 선택)
-2. 감정의 원인: (무엇 때문에 이런 감정을 느끼는지)
-3. 신체 반응: (어떤 신체적 변화가 있는지)
-4. 생각 패턴: (이 감정과 함께 어떤 생각이 드는지)
-5. 대처 방법: (이 감정을 어떻게 다루고 있는지)
-
-꾸준한 감정 일기는 스트레스 관리와 정신 건강 증진에 큰 도움이 됩니다.
-        `;
-
-        this.addMessage(journalContent, "ai");
     }
 
     // 이완 기법 표시
@@ -3035,7 +2998,7 @@ AICompanion.prototype.getCounselingTechniques = function (userMessage) {
 - 문제 해결적 사고: 문제를 위기가 아닌 도전으로 재해석
 
 3. 장기적 감정 관리:
-- 감정 일기: 자신의 감정 패턴 기록하고 분석하기
+- 감정 패턴 기록하고 분석하기
 - 스트레스 관리 계획: 스트레스 원인과 대처 방법 미리 계획
 - 사회적 지지망 활용: 신뢰할 수 있는 사람과 감정 나누기
             `,
@@ -3204,7 +3167,7 @@ AICompanion.prototype.generatePersonalizedAdvice = function (analysis) {
         advice += `- 문제가 아닌 '우리'의 관계로 접근하기\n\n`;
     } else if (dominantEmotion === "sadness") {
         advice += `마음이 힘든 시간을 보내고 계시는군요. 감정을 잘 돌보기 위한 제안:\n`;
-        advice += `- 감정 일기 쓰기\n`;
+        advice += `- 감정을 표현하고 기록하기\n`;
         advice += `- 신뢰할 수 있는 사람과 대화 나누기\n`;
         advice += `- 전문가 상담 고려하기\n\n`;
     }
@@ -3319,7 +3282,7 @@ AICompanion.prototype.generatePersonalizedAdvice = function (analysis) {
         advice += `- 문제가 아닌 '우리'의 관계로 접근하기\n\n`;
     } else if (dominantEmotion === "sadness") {
         advice += `마음이 힘든 시간을 보내고 계시는군요. 감정을 잘 돌보기 위한 제안:\n`;
-        advice += `- 감정 일기 쓰기\n`;
+        advice += `- 감정을 표현하고 기록하기\n`;
         advice += `- 신뢰할 수 있는 사람과 대화 나누기\n`;
         advice += `- 전문가 상담 고려하기\n\n`;
     }
