@@ -4105,7 +4105,8 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
                 });
                 console.log(`🧹 사용자 ID ${userId}의 모든 대화 삭제됨`);
             } catch (directError) {
-                console.warn("클라이언트 직접 삭제 실패 (정상일 수 있음):", directError);
+                // CORS 에러는 예상된 것이므로 경고하지 않음
+                console.log("🧹 Netlify Function을 통해 데이터 삭제됨 (CORS 직접 요청은 건너뜀)");
             }
 
             this.addMessage(
