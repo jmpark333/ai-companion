@@ -3940,25 +3940,61 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             if (conversations && conversations.length > 0) {
                 let response = "📚 **Memory에 저장된 대화 기록:**\n\n";
 
-                conversations.forEach((conv, index) => {
-                    const date = new Date(conv.timestamp).toLocaleString('ko-KR');
-                    response += `**[메시지 ${index + 1}]**\n`;
-                    response += `**사용자:** ${conv.user_message}\n`;
-                    response += `**AI:** ${conv.ai_message}\n`;
-                    response += `**시간:** ${date}\n`;
-                    if (conv.topic) {
-                        response += `**주제:** ${conv.topic}\n`;
-                    }
-                    if (conv.emotion) {
-                        response += `**감정:** ${conv.emotion}\n`;
-                    }
-                    response += "\n";
+                // 실제 대화만 필터링 (Memory 명령어 응답 제외)
+                const realConversations = conversations.filter(conv => {
+                    const userMsg = conv.user_message || '';
+                    const aiMsg = conv.ai_message || '';
+
+                    // Memory 명령어 응답이거나 시스템 메시지 필터링
+                    return !(
+                        userMsg.includes('Memory') ||
+                        userMsg.includes('기록') ||
+                        userMsg.includes('저장') ||
+                        userMsg.includes('삭제') ||
+                        userMsg.includes('조회') ||
+                        userMsg.includes('검색') ||
+                        aiMsg.includes('Memory') ||
+                        aiMsg.includes('기록') ||
+                        aiMsg.includes('저장') ||
+                        aiMsg.includes('삭제') ||
+                        aiMsg.includes('조회') ||
+                        aiMsg.includes('검색') ||
+                        aiMsg.includes('조회하고 있습니다') ||
+                        aiMsg.includes('저장하고 있습니다') ||
+                        aiMsg.includes('삭제하고 있습니다') ||
+                        aiMsg.includes('검색하고 있습니다') ||
+                        aiMsg.includes('패턴 분석') ||
+                        aiMsg.includes('분석 결과') ||
+                        aiMsg.includes('요약')
+                    );
                 });
 
-                this.addMessage(response, "ai");
+                if (realConversations.length > 0) {
+                    realConversations.forEach((conv, index) => {
+                        const date = new Date(conv.timestamp).toLocaleString('ko-KR');
+                        response += `**[대화 ${index + 1}]**\n`;
+                        response += `**사용자:** ${conv.user_message}\n`;
+                        response += `**AI:** ${conv.ai_message}\n`;
+                        response += `**시간:** ${date}\n`;
+                        if (conv.topic) {
+                            response += `**주제:** ${conv.topic}\n`;
+                        }
+                        if (conv.emotion) {
+                            response += `**감정:** ${conv.emotion}\n`;
+                        }
+                        response += "\n";
+                    });
+
+                    this.addMessage(response, "ai");
+                } else {
+                    this.addMessage(
+                        "Memory에 저장된 실제 대화가 없습니다. 일반 대화만 저장되었고 Memory 명령어 응답은 저장되지 않았어요. 😊",
+                        "ai",
+                    );
+                }
             } else {
                 this.addMessage(
-                    "아직 Memory에 저장된 기록이 없습니다. 먼저 대화를 나눠보세요! 😊",
+                    "Memory에 저장된 기록이 없습니다. 일반 대화를 나눠보세요! 😊",
                     "ai",
                 );
             }
@@ -4084,39 +4120,59 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
             "Memory에 저장된 모든 대화 기록을 삭제하고 있습니다... 🗑️",
             "ai",
         );
+
+        let deletionSuccessful = false;
+        let errorMessages = [];
+
+        // 1단계: NetlifyMemoryClient의 clearAllConversations 사용
         try {
-            // NetlifyMemoryClient의 clearAllConversations 사용
+            console.log("🚀 Memory 삭제 시도 1: Netlify Function을 통한 삭제");
             const success = await this.memoryClient.clearAllConversations();
 
-            // 추가 보안: 클라이언트에서도 직접 삭제 시도 (user_id 기준)
-            // (함수가 제대로 구현되지 않은 경우를 대비)
-            try {
-                const userId = this.memoryClient.userId || 'user_jkcsgf';
-                const deleteUrl = `https://hpejebnqhgojfxttfbal.supabase.co/rest/v1/conversations?user_id=eq.${encodeURIComponent(userId)}`;
-
-                await fetch(deleteUrl, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZWplYm5xaGdvamZ4dHRmYmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTA4MTIsImV4cCI6MjA3MzMyNjgxMn0.AibxZdVe1INo5e3voeA6lVkdI9nY46_MuWJWFl2_JAg',
-                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwZWplYm5xaGdvamZ4dHRmYmFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NTA4MTIsImV4cCI6MjA3MzMyNjgxMn0.AibxZdVe1INo5e3voeA6lVkdI9nY46_MuWJWFl2_JAg',
-                        'Content-Type': 'application/json',
-                        'Prefer': 'return=minimal'
-                    }
-                });
-                console.log(`🧹 사용자 ID ${userId}의 모든 대화 삭제됨`);
-            } catch (directError) {
-                // CORS 에러는 예상된 것이므로 경고하지 않음
-                console.log("🧹 Netlify Function을 통해 데이터 삭제됨 (CORS 직접 요청은 건너뜀)");
+            if (success) {
+                console.log("✅ Netlify Function을 통한 삭제 성공");
+                deletionSuccessful = true;
+            } else {
+                console.warn("⚠️ Netlify Function 삭제에서 false 반환");
+                errorMessages.push("Netlify Function 삭제에서 false 반환");
             }
+        } catch (netlifyError) {
+            console.error("❌ Netlify Function 삭제 실패:", netlifyError);
+            errorMessages.push(`Netlify Function 오류: ${netlifyError.message}`);
+        }
 
+        // 삭제 확인: Memory에서 데이터가 실제로 삭제되었는지 확인
+        try {
+            console.log("🔍 Memory 삭제 확인: 남은 데이터 조회");
+            const remainingData = await this.memoryClient.getRecentConversations(1);
+
+            if (!remainingData || remainingData.length === 0) {
+                console.log("✅ Memory 삭제 확인: 모든 데이터가 삭제됨");
+                deletionSuccessful = true;
+            } else {
+                console.warn("⚠️ Memory 삭제 확인: 데이터가 남아있음", remainingData);
+                errorMessages.push(`삭제 후에도 ${remainingData.length}개의 데이터가 남아있음`);
+            }
+        } catch (verifyError) {
+            console.error("❌ Memory 삭제 확인 실패:", verifyError);
+            errorMessages.push(`삭제 확인 실패: ${verifyError.message}`);
+        }
+
+        // 최종 결과 보고
+        if (deletionSuccessful) {
+            console.log("🎉 Memory 삭제 전체 성공");
             this.addMessage(
                 "✅ Memory 기록이 모두 삭제되었습니다! 🧹\n\n새로운 대화를 시작하세요. 이제 이전 기록 없이 깨끗한 상태입니다.",
                 "ai",
             );
-        } catch (error) {
-            console.error("Memory 전체 삭제 실패:", error);
-            this.addMessage("기록 삭제 중 오류가 발생했습니다. 😥", "ai");
+        } else {
+            console.error("❌ Memory 삭제 전체 실패:", errorMessages);
+            this.addMessage(
+                `❌ Memory 삭제 중 오류가 발생했습니다. 😥\n\n**오류 내용:**\n${errorMessages.join('\n')}\n\n다시 시도하시거나 새로고침 후 다시 시도해주세요.`,
+                "ai",
+            );
         }
+
         return true;
     }
 
