@@ -711,9 +711,24 @@ class AICompanion {
 
             // Memory 서버가 연결되어 있으면 메모리에 자동 저장 (사용자 메시지와 AI 응답 모두)
             if (this.memoryMCPAvailable) {
-                this.saveMessageToMemory(message).catch((err) => {
-                    console.warn("Memory 저장 실패:", err);
-                });
+                // AI 응답일 때는 마지막 사용자 메시지와 함께 저장
+                if (sender === "ai") {
+                    // 마지막 사용자 메시지 찾기
+                    const lastUserMessage = [...this.messages]
+                        .reverse()
+                        .find((msg) => msg.sender === "user");
+
+                    if (lastUserMessage) {
+                        this.saveConversationPair(lastUserMessage, message).catch((err) => {
+                            console.warn("Memory 대화 쌍 저장 실패:", err);
+                        });
+                    }
+                } else {
+                    // 사용자 메시지는 개별 저장 (AI 응답을 기다림)
+                    this.saveMessageToMemory(message).catch((err) => {
+                        console.warn("Memory 저장 실패:", err);
+                    });
+                }
             }
         }
 
@@ -734,12 +749,8 @@ class AICompanion {
                 if (recentConvs.length > 0) {
                     memoryContext = "\n\n**최근 대화 기록 (참고용):**\n";
                     recentConvs.forEach((conv, index) => {
-                        const content = conv.observations?.find((obs) =>
-                            obs.startsWith("내용:"),
-                        );
-                        if (content) {
-                            memoryContext += `${index + 1}. ${content.replace("내용: ", "")}\n`;
-                        }
+                        memoryContext += `${index + 1}. 사용자: "${conv.user_message}"\n`;
+                        memoryContext += `   AI: "${conv.ai_message.substring(0, 80)}..."\n`;
                     });
                 }
 
@@ -755,12 +766,8 @@ class AICompanion {
                         relatedConversations
                             .slice(0, 2)
                             .forEach((conv, index) => {
-                                const content = conv.observations?.find((obs) =>
-                                    obs.startsWith("내용:"),
-                                );
-                                if (content) {
-                                    memoryContext += `- ${content.replace("내용: ", "")}\n`;
-                                }
+                                memoryContext += `${index + 1}. 사용자: "${conv.user_message}"\n`;
+                                memoryContext += `   AI: "${conv.ai_message.substring(0, 80)}..."\n`;
                             });
                     }
                 }
@@ -3440,19 +3447,50 @@ AICompanion.prototype.getUserId = function () {
     return this.memoryClient.userId;
 };
 
-// 메시지를 Memory에 저장
+// 대화 쌍(사용자 메시지 + AI 응답)을 Memory에 저장
+AICompanion.prototype.saveConversationPair = async function (userMessage, aiMessage) {
+    if (!this.memoryMCPAvailable) return false;
+
+    try {
+        // NetlifyMemoryClient에 대화 저장
+        const saved = await this.memoryClient.saveConversation(
+            userMessage.text,  // 사용자 메시지
+            aiMessage.text,    // AI 응답
+            {
+                sender: "user+ai",
+                emotion: this.memoryClient.detectEmotion?.(userMessage.text) || "중립",
+                topic: this.memoryClient.detectTopic?.(userMessage.text) || "일반",
+                timestamp: aiMessage.timestamp.toISOString(),
+            },
+        );
+
+        if (saved) {
+            console.log(
+                "💾 Memory 대화 쌍 저장 성공:",
+                "사용자:", userMessage.text.substring(0, 30) + "...",
+                "AI:", aiMessage.text.substring(0, 30) + "..."
+            );
+        }
+
+        return saved;
+    } catch (error) {
+        console.error("Memory 대화 쌍 저장 오류:", error);
+        return false;
+    }
+};
+
+// 개별 메시지를 Memory에 저장 (호환성 유지)
 AICompanion.prototype.saveMessageToMemory = async function (message) {
     if (!this.memoryMCPAvailable) return false;
 
     try {
-        // Supabase에 대화 저장
+        // Supabase에 대화 저장 (개별 메시지)
         const saved = await this.memoryClient.saveConversation(
             message.text,
             message.text, // AI 응답인 경우에도 동일하게 저장
             {
                 sender: message.sender,
-                emotion:
-                    this.memoryClient.detectEmotion?.(message.text) || "중립",
+                emotion: this.memoryClient.detectEmotion?.(message.text) || "중립",
                 topic: this.memoryClient.detectTopic?.(message.text) || "일반",
                 timestamp: message.timestamp.toISOString(),
             },
