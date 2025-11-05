@@ -392,6 +392,10 @@ class AICompanion {
         this.isTyping = false;
         this.isProcessingMessage = false; // 메시지 처리 중 상태 추가
 
+        // Memory 서버 연결 상태 (Supabase + Netlify Functions)
+        this.memoryMCPAvailable = false;
+        this.memoryClient = new NetlifyMemoryClient();
+
         // 기본 상황 정보 로드 (비동기 초기화)
         this.basicSituation = null;
         this.initializeBasicSituation();
@@ -409,10 +413,6 @@ class AICompanion {
 
         // EXA MCP 서버 연결 상태
         this.exaAvailable = false;
-
-        // Memory 서버 연결 상태 (Supabase + Netlify Functions)
-        this.memoryMCPAvailable = false;
-        this.memoryClient = new NetlifyMemoryClient();
 
         // 연결 확인 및 자동 활성화
         this.memoryClient.checkConnection().then((connected) => {
