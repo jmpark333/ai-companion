@@ -691,47 +691,47 @@ class AICompanion {
                 statusDiv.style.border = '1px solid #bee5eb';
                 break;
         }
-    
-        // 조용한 컨텍스트 저장 (알림 없이)
-        async savePersonalContextSilent() {
-            const contextTextarea = document.getElementById('personalContext');
-            const contextData = contextTextarea ? contextTextarea.value.trim() : '';
-    
-            if (!contextData) {
-                return; // 내용이 없으면 저장하지 않음
-            }
-    
-            try {
-                // Netlify Functions를 통해 Supabase에 컨텍스트 저장
-                const response = await fetch('/.netlify/functions/memory/context/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userId: this.getUserId(),
-                        contextType: 'basic_situation',
-                        contextData: contextData
-                    })
-                });
-    
-                const result = await response.json();
-    
-                if (result.success) {
-                    this.basicSituation = contextData; // 메모리에도 저장
-                    console.log('개인 컨텍스트 자동 저장 성공:', contextData);
-                } else {
-                    console.error('컨텍스트 자동 저장 실패:', result.error);
-                }
-            } catch (error) {
-                console.error('컨텍스트 자동 저장 오류:', error);
-            }
-        }
 
         // 3초 후 자동으로 사라짐
         setTimeout(() => {
             statusDiv.style.display = 'none';
         }, 3000);
+    }
+
+    // 조용한 컨텍스트 저장 (알림 없이)
+    async savePersonalContextSilent() {
+        const contextTextarea = document.getElementById('personalContext');
+        const contextData = contextTextarea ? contextTextarea.value.trim() : '';
+
+        if (!contextData) {
+            return; // 내용이 없으면 저장하지 않음
+        }
+
+        try {
+            // Netlify Functions를 통해 Supabase에 컨텍스트 저장
+            const response = await fetch('/.netlify/functions/memory/context/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: this.getUserId(),
+                    contextType: 'basic_situation',
+                    contextData: contextData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.basicSituation = contextData; // 메모리에도 저장
+                console.log('개인 컨텍스트 자동 저장 성공:', contextData);
+            } else {
+                console.error('컨텍스트 자동 저장 실패:', result.error);
+            }
+        } catch (error) {
+            console.error('컨텍스트 자동 저장 오류:', error);
+        }
     }
 
     // 기본 상황 정보 비동기 초기화
