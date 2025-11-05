@@ -347,25 +347,16 @@ async function getTopicStats(body) {
   };
 }
 
-// 대화 삭제
+// 대화 삭제 (모든 대화 삭제)
 async function clearConversations(body) {
-  const { userId } = body;
+  // userId 체크 제거 - 모든 대화를 삭제하기 위함
+  // const { userId } = body;
 
-  if (!userId) {
-    return {
-      statusCode: 400,
-      headers,
-      body: JSON.stringify({
-        success: false,
-        error: 'userId가 필요합니다.'
-      })
-    };
-  }
-
+  // 모든 대화 삭제 (.neq('id', 0)은 모든 레코드를 삭제)
   const { error } = await supabase
     .from('conversations')
     .delete()
-    .eq('user_id', userId);
+    .neq('id', 0);
 
   if (error) {
     return {
