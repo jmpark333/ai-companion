@@ -1202,7 +1202,7 @@ class AICompanion {
             }
         }
 
-        // 오늘 날짜 정보 추가
+        // 오늘 날짜 정보 추가 (더 명확하게 강조)
         const today = new Date();
         const dateString = today.toLocaleDateString('ko-KR', {
             year: 'numeric',
@@ -1210,7 +1210,7 @@ class AICompanion {
             day: 'numeric',
             weekday: 'long',
         });
-        const dateContext = `\n\n**오늘 날짜:**\n${dateString}`;
+        const dateContext = `\n\n**📅 오늘 날짜 정보:**\n${dateString}\n**⚠️ 중요:** 사용자가 "오늘 날짜"나 "지금 며칠이야" 등 날짜를 묻는 질문을 하면, 항상 위 날짜 정보를 기준으로 정확하게 대답해주세요. 절대 "모르겠어요"라고 답하지 마세요.`;
 
         // 성격에 따른 시스템 프롬프트 설정
         const systemPrompts = {
