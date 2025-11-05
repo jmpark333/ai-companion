@@ -433,6 +433,116 @@
                     </div>
 
                     <div class="setting-group">
+                        <label>🧠 개인 컨텍스트 관리</label>
+                        <p
+                            style="
+                                font-size: 12px;
+                                color: #666;
+                                margin-bottom: 10px;
+                            "
+                        >
+                            AI가 사용자에 대한 중요한 정보를 기억하도록 개인 컨텍스트를 설정하세요.
+                            이 정보는 모든 대화에서 참고되어 더 개인화된 응답을 제공합니다.
+                        </p>
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <span style="font-size: 14px; font-weight: 500;">개인 컨텍스트</span>
+                                <span id="contextCharCount" style="font-size: 12px; color: #666;">0/2000</span>
+                            </div>
+                            <textarea
+                                id="personalContext"
+                                placeholder="여기에 개인 컨텍스트를 입력하세요...
+
+예시:
+- 이름: 김철수, 35세, 남성
+- 직업: 소프트웨어 개발자
+- 가족상황: 기혼, 5세 아들 1명
+- 성격: 내향적이지만 친한 사람과는 활발함
+- 관심사: 기술, 독서, 등산
+- 현재 고민: 업무 스트레스와 아이 교육의 균형
+- 건강 상태: 건강함
+- 생활 패턴: 주중 업무, 주말 가족 시간"
+                                rows="8"
+                                maxlength="2000"
+                                style="
+                                    width: 100%;
+                                    padding: 10px;
+                                    border: 1px solid var(--border-color);
+                                    border-radius: 8px;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    resize: vertical;
+                                    font-family: inherit;
+                                "
+                            ></textarea>
+                            <small
+                                style="
+                                    color: #666;
+                                    font-size: 11px;
+                                    display: block;
+                                    margin-top: 5px;
+                                "
+                            >
+                                💡 팁: 개인정보, 가족상황, 직업, 성격, 관심사, 현재 고민 등을 기록해두면 AI가 더 정확하고 개인화된 조언을 제공할 수 있습니다.
+                            </small>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <button
+                                type="button"
+                                id="saveContextBtn"
+                                style="
+                                    background: #4caf50;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    flex: 1;
+                                "
+                            >
+                                💾 컨텍스트 저장
+                            </button>
+                            <button
+                                type="button"
+                                id="loadContextBtn"
+                                style="
+                                    background: #2196f3;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    flex: 1;
+                                "
+                            >
+                                📥 컨텍스트 불러오기
+                            </button>
+                            <button
+                                type="button"
+                                id="clearContextBtn"
+                                style="
+                                    background: #ff9800;
+                                    color: white;
+                                    border: none;
+                                    padding: 10px 16px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    flex: 1;
+                                "
+                            >
+                                🗑️ 컨텍스트 삭제
+                            </button>
+                        </div>
+                        <div id="contextStatus" style="
+                            font-size: 12px;
+                            padding: 8px;
+                            border-radius: 4px;
+                            margin-top: 5px;
+                            display: none;
+                        "></div>
+                    </div>
+
+                    <div class="setting-group">
                         <button
                             type="button"
                             onclick="window.aiCompanion.showUsageStats()"

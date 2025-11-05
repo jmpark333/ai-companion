@@ -89,6 +89,9 @@ exports.handler = async (event, context) => {
       case '/context/get':
         return await getUserContext(body);
 
+      case '/context/delete':
+        return await deleteUserContext(body);
+
       default:
         return {
           statusCode: 404,
@@ -524,6 +527,54 @@ async function getUserContext(body) {
     body: JSON.stringify({
       success: true,
       data: data || []
+    })
+  };
+}
+
+// 사용자 컨텍스트 삭제
+async function deleteUserContext(body) {
+  const { userId, contextType } = body;
+
+  if (!userId) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: 'userId가 필요합니다.'
+      })
+    };
+  }
+
+  let query = supabase
+    .from('user_contexts')
+    .delete()
+    .eq('user_id', userId);
+
+  if (contextType) {
+    query = query.eq('context_type', contextType);
+  }
+
+  const { data, error, count } = await query.select();
+
+  if (error) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({
+        success: false,
+        error: error.message
+      })
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers,
+    body: JSON.stringify({
+      success: true,
+      message: `${count || 0}개의 컨텍스트가 삭제되었습니다.`,
+      deletedCount: count || 0
     })
   };
 }

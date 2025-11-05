@@ -450,6 +450,288 @@ class AICompanion {
         this.loadChatHistory(); // 대화 기록 로드
         this.initializeChat();
         this.checkMemoryMCPServer(); // Memory MCP 서버 상태 확인
+        this.initializeContextManagement(); // 개인 컨텍스트 관리 초기화
+    }
+
+    // 개인 컨텍스트 관리 초기화
+    initializeContextManagement() {
+        // 컨텍스트 관리 버튼 이벤트 리스너 설정
+        setTimeout(() => {
+            const saveContextBtn = document.getElementById('saveContextBtn');
+            const loadContextBtn = document.getElementById('loadContextBtn');
+            const clearContextBtn = document.getElementById('clearContextBtn');
+            const personalContext = document.getElementById('personalContext');
+            const contextCharCount = document.getElementById('contextCharCount');
+
+            if (saveContextBtn) {
+                saveContextBtn.addEventListener('click', () => {
+                    this.savePersonalContext();
+                });
+            }
+
+            if (loadContextBtn) {
+                loadContextBtn.addEventListener('click', () => {
+                    this.loadPersonalContext();
+                });
+            }
+
+            if (clearContextBtn) {
+                clearContextBtn.addEventListener('click', () => {
+                    this.clearPersonalContext();
+                });
+            }
+
+            // 컨텍스트 입력 시 문자 카운트 업데이트
+            if (personalContext && contextCharCount) {
+                personalContext.addEventListener('input', () => {
+                    const text = personalContext.value;
+                    const charCount = text.length;
+                    contextCharCount.textContent = `${charCount}/2000`;
+                    
+                    // 문자 수에 따라 색상 변경
+                    if (charCount > 1800) {
+                        contextCharCount.style.color = '#e74c3c'; // 빨간색
+                    } else if (charCount > 1500) {
+                        contextCharCount.style.color = '#f39c12'; // 주황색
+                    } else {
+                        contextCharCount.style.color = '#666'; // 기본 색상
+                    }
+                });
+
+                // 초기 문자 카운트 설정
+                const initialCharCount = personalContext.value.length;
+                contextCharCount.textContent = `${initialCharCount}/2000`;
+            }
+
+            // 자동 저장 기능 (30초마다 변경사항 확인)
+            let lastSavedContent = personalContext ? personalContext.value : '';
+            setInterval(() => {
+                if (personalContext && personalContext.value !== lastSavedContent) {
+                    // 변경사항이 있으면 자동 저장
+                    this.savePersonalContextSilent();
+                    lastSavedContent = personalContext.value;
+                }
+            }, 30000); // 30초마다 확인
+        }, 100); // DOM 로드 대기
+
+        // 설정 모달이 열릴 때마다 현재 컨텍스트 불러오기
+        const originalOpenSettings = this.openSettings.bind(this);
+        this.openSettings = function() {
+            originalOpenSettings();
+            // 현재 컨텍스트를 textarea에 표시
+            this.loadPersonalContextToUI();
+        };
+    }
+
+    // 개인 컨텍스트 저장
+    async savePersonalContext() {
+        const contextTextarea = document.getElementById('personalContext');
+        const contextData = contextTextarea ? contextTextarea.value.trim() : '';
+
+        if (!contextData) {
+            this.showContextStatus('저장할 컨텍스트 내용이 없습니다.', 'warning');
+            return;
+        }
+
+        try {
+            // Netlify Functions를 통해 Supabase에 컨텍스트 저장
+            const response = await fetch('/.netlify/functions/memory/context/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: this.getUserId(),
+                    contextType: 'basic_situation',
+                    contextData: contextData
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.basicSituation = contextData; // 메모리에도 저장
+                this.showContextStatus('✅ 개인 컨텍스트가 성공적으로 저장되었습니다.', 'success');
+                console.log('개인 컨텍스트 저장 성공:', contextData);
+                
+                // AI에게 컨텍스트 업데이트 알림
+                this.addMessage('✅ 개인 컨텍스트가 업데이트되었습니다. 이제부터 이 정보를 바탕으로 더 개인화된 대화를 나눌 수 있습니다.', 'ai');
+            } else {
+                this.showContextStatus('❌ 컨텍스트 저장에 실패했습니다: ' + result.error, 'error');
+                console.error('컨텍스트 저장 실패:', result.error);
+            }
+        } catch (error) {
+            this.showContextStatus('❌ 저장 중 오류가 발생했습니다: ' + error.message, 'error');
+            console.error('컨텍스트 저장 오류:', error);
+        }
+    }
+
+    // 개인 컨텍스트 불러오기
+    async loadPersonalContext() {
+        try {
+            // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
+            const response = await fetch('/.netlify/functions/memory/context/get', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: this.getUserId(),
+                    contextType: 'basic_situation'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data && result.data.length > 0) {
+                const contextData = result.data[0].context_data;
+                this.basicSituation = contextData; // 메모리에도 저장
+                this.showContextStatus('✅ 개인 컨텍스트가 성공적으로 불러왔습니다.', 'success');
+                console.log('개인 컨텍스트 로드 성공:', contextData);
+
+                // UI에도 표시
+                this.loadPersonalContextToUI();
+                
+                // AI에게 컨텍스트 로드 알림
+                this.addMessage('✅ 개인 컨텍스트를 불러왔습니다. 이제부터 이 정보를 바탕으로 대화하겠습니다.', 'ai');
+            } else {
+                this.showContextStatus('📄 저장된 컨텍스트가 없습니다.', 'info');
+                console.log('저장된 컨텍스트 없음');
+                
+                // AI에게 컨텍스트 없음 알림
+                this.addMessage('📄 저장된 개인 컨텍스트가 없습니다. 설정에서 컨텍스트를 추가하면 더 개인화된 대화를 나눌 수 있습니다.', 'ai');
+            }
+        } catch (error) {
+            this.showContextStatus('❌ 불러오기 중 오류가 발생했습니다: ' + error.message, 'error');
+            console.error('컨텍스트 로드 오류:', error);
+        }
+    }
+
+    // 개인 컨텍스트 삭제
+    async clearPersonalContext() {
+        if (!confirm('정말로 개인 컨텍스트를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+            return;
+        }
+
+        try {
+            // Netlify Functions를 통해 Supabase에서 컨텍스트 삭제
+            const response = await fetch('/.netlify/functions/memory/context/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId: this.getUserId(),
+                    contextType: 'basic_situation'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.basicSituation = ''; // 메모리에서도 삭제
+                this.showContextStatus('✅ 개인 컨텍스트가 삭제되었습니다.', 'success');
+                console.log('개인 컨텍스트 삭제 성공');
+
+                // UI에서도 삭제
+                const contextTextarea = document.getElementById('personalContext');
+                if (contextTextarea) {
+                    contextTextarea.value = '';
+                }
+                
+                // AI에게 컨텍스트 삭제 알림
+                this.addMessage('✅ 개인 컨텍스트가 삭제되었습니다. 이제부터 일반적인 대화를 나누게 됩니다.', 'ai');
+            } else {
+                this.showContextStatus('❌ 컨텍스트 삭제에 실패했습니다: ' + result.error, 'error');
+                console.error('컨텍스트 삭제 실패:', result.error);
+            }
+        } catch (error) {
+            this.showContextStatus('❌ 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
+            console.error('컨텍스트 삭제 오류:', error);
+        }
+    }
+
+    // 개인 컨텍스트를 UI에 불러오기
+    loadPersonalContextToUI() {
+        const contextTextarea = document.getElementById('personalContext');
+        if (contextTextarea && this.basicSituation) {
+            contextTextarea.value = this.basicSituation;
+        }
+    }
+
+    // 컨텍스트 상태 메시지 표시
+    showContextStatus(message, type = 'info') {
+        const statusDiv = document.getElementById('contextStatus');
+        if (!statusDiv) return;
+
+        statusDiv.textContent = message;
+        statusDiv.style.display = 'block';
+
+        // 상태 타입에 따른 스타일
+        statusDiv.className = '';
+        switch (type) {
+            case 'success':
+                statusDiv.style.backgroundColor = '#d4edda';
+                statusDiv.style.color = '#155724';
+                statusDiv.style.border = '1px solid #c3e6cb';
+                break;
+            case 'error':
+                statusDiv.style.backgroundColor = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.style.border = '1px solid #f5c6cb';
+                break;
+            case 'warning':
+                statusDiv.style.backgroundColor = '#fff3cd';
+                statusDiv.style.color = '#856404';
+                statusDiv.style.border = '1px solid #ffeaa7';
+                break;
+            default: // info
+                statusDiv.style.backgroundColor = '#d1ecf1';
+                statusDiv.style.color = '#0c5460';
+                statusDiv.style.border = '1px solid #bee5eb';
+                break;
+        }
+    
+        // 조용한 컨텍스트 저장 (알림 없이)
+        async savePersonalContextSilent() {
+            const contextTextarea = document.getElementById('personalContext');
+            const contextData = contextTextarea ? contextTextarea.value.trim() : '';
+    
+            if (!contextData) {
+                return; // 내용이 없으면 저장하지 않음
+            }
+    
+            try {
+                // Netlify Functions를 통해 Supabase에 컨텍스트 저장
+                const response = await fetch('/.netlify/functions/memory/context/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: this.getUserId(),
+                        contextType: 'basic_situation',
+                        contextData: contextData
+                    })
+                });
+    
+                const result = await response.json();
+    
+                if (result.success) {
+                    this.basicSituation = contextData; // 메모리에도 저장
+                    console.log('개인 컨텍스트 자동 저장 성공:', contextData);
+                } else {
+                    console.error('컨텍스트 자동 저장 실패:', result.error);
+                }
+            } catch (error) {
+                console.error('컨텍스트 자동 저장 오류:', error);
+            }
+        }
+
+        // 3초 후 자동으로 사라짐
+        setTimeout(() => {
+            statusDiv.style.display = 'none';
+        }, 3000);
     }
 
     // 기본 상황 정보 비동기 초기화
@@ -918,6 +1200,19 @@ class AICompanion {
 
         // 사용자 기본 컨텍스트 정보 준비
         const basicContext = this.basicSituation ? `\n\n**사용자 기본 컨텍스트 정보:**\n${this.basicSituation}` : '';
+        
+        // 컨텍스트가 없으면 사용자에게 알림
+        if (!this.basicSituation) {
+            // 설정 모달이 열려있지 않을 때만 알림 표시
+            const settingsModal = document.getElementById('settingsModal');
+            if (!settingsModal || settingsModal.style.display === 'none') {
+                // AI 응답에 컨텍스트 설정 안내 메시지 추가 (10번 대화마다 한 번만)
+                const messageCount = this.messages.filter(m => m.sender === 'user').length;
+                if (messageCount % 10 === 0 && messageCount > 0) {
+                    basicContext += '\n\n**참고:** 사용자에 대한 더 개인화된 응답을 위해 설정에서 "개인 컨텍스트 관리"를 통해 기본 정보를 입력해주세요.';
+                }
+            }
+        }
 
         // 성격에 따른 시스템 프롬프트 설정
         const systemPrompts = {
