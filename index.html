@@ -694,18 +694,36 @@
         <script src="memory-netlify-client.js?v=2024010501"></script>
         <script src="js/emotion-diary.js?v=2024010501"></script>
         <script>
-            // 사용자 ID 표시 초기화
-            document.addEventListener("DOMContentLoaded", () => {
-                setTimeout(() => {
-                    if (window.emotionDiary) {
-                        const userIdDisplay =
-                            document.getElementById("userIdDisplay");
-                        if (userIdDisplay) {
-                            userIdDisplay.value =
-                                window.emotionDiary.getCurrentUserId();
-                        }
+            // 사용자 ID 표시 초기화 및 설정 모달 열 때마다 업데이트
+            function updateUserIdDisplay() {
+                if (window.emotionDiary) {
+                    const userIdDisplay =
+                        document.getElementById("userIdDisplay");
+                    if (userIdDisplay) {
+                        const userId = window.emotionDiary.getCurrentUserId();
+                        userIdDisplay.value = userId;
+                        console.log("🆔 사용자 ID 표시:", userId);
                     }
-                }, 1000);
+                }
+            }
+
+            // 페이지 로드 시
+            document.addEventListener("DOMContentLoaded", () => {
+                // 여러 번 시도하여 확실히 로드
+                setTimeout(updateUserIdDisplay, 100);
+                setTimeout(updateUserIdDisplay, 500);
+                setTimeout(updateUserIdDisplay, 1000);
+                setTimeout(updateUserIdDisplay, 2000);
+            });
+
+            // 설정 버튼 클릭 시에도 업데이트
+            document.addEventListener("DOMContentLoaded", () => {
+                const settingsBtn = document.getElementById("settingsBtn");
+                if (settingsBtn) {
+                    settingsBtn.addEventListener("click", () => {
+                        setTimeout(updateUserIdDisplay, 100);
+                    });
+                }
             });
         </script>
     </body>
