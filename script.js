@@ -713,21 +713,49 @@ class AICompanion {
             if (this.memoryMCPAvailable) {
                 // AI 응답일 때는 마지막 사용자 메시지와 함께 저장
                 if (sender === "ai") {
-                    // 마지막 사용자 메시지 찾기
-                    const lastUserMessage = [...this.messages]
-                        .reverse()
-                        .find((msg) => msg.sender === "user");
+                    // Memory 관련 시스템 메시지(조회, 삭제 등)는 저장하지 않음
+                    if (
+                        !text.includes("Memory") &&
+                        !text.includes("기록") &&
+                        !text.includes("대화") &&
+                        !text.includes("저장") &&
+                        !text.includes("삭제") &&
+                        !text.includes("조회") &&
+                        !text.includes("검색")
+                    ) {
+                        const lastUserMessage = [...this.messages]
+                            .reverse()
+                            .find((msg) => msg.sender === "user");
 
-                    if (lastUserMessage) {
-                        this.saveConversationPair(lastUserMessage, message).catch((err) => {
-                            console.warn("Memory 대화 쌍 저장 실패:", err);
-                        });
+                        if (lastUserMessage) {
+                            this.saveConversationPair(lastUserMessage, message).catch((err) => {
+                                console.warn("Memory 대화 쌍 저장 실패:", err);
+                            });
+                        }
+                    } else {
+                        console.log("📚 Memory 시스템 명령어 응답이므로 저장하지 않음");
                     }
                 } else {
-                    // 사용자 메시지는 개별 저장 (AI 응답을 기다림)
-                    this.saveMessageToMemory(message).catch((err) => {
-                        console.warn("Memory 저장 실패:", err);
-                    });
+                    // 사용자 메시지는 Memory 명령어가 아닌 경우에만 저장 (AI 응답을 기다림)
+                    const userMessage = message.text.toLowerCase();
+                    const isMemoryCommand = userMessage.includes("memory") ||
+                                            userMessage.includes("기록") ||
+                                            userMessage.includes("삭제") ||
+                                            userMessage.includes("지워") ||
+                                            userMessage.includes("비워") ||
+                                            userMessage.includes("초기화") ||
+                                            userMessage.includes("검색") ||
+                                            userMessage.includes("보여줘") ||
+                                            userMessage.includes("봐줘") ||
+                                            userMessage.includes("전체");
+
+                    if (!isMemoryCommand) {
+                        this.saveMessageToMemory(message).catch((err) => {
+                            console.warn("Memory 저장 실패:", err);
+                        });
+                    } else {
+                        console.log("📚 Memory 명령어 사용자 입력이므로 저장하지 않음");
+                    }
                 }
             }
         }
