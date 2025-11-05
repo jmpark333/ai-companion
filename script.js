@@ -533,8 +533,9 @@ class AICompanion {
         }
 
         try {
+            const url = `${window.location.origin}/.netlify/functions/memory/context/save`;
             // Netlify Functions를 통해 Supabase에 컨텍스트 저장
-            const response = await fetch('/.netlify/functions/memory/context/save', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -568,8 +569,9 @@ class AICompanion {
     // 개인 컨텍스트 불러오기
     async loadPersonalContext() {
         try {
+            const url = `${window.location.origin}/.netlify/functions/memory/context/get`;
             // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
-            const response = await fetch('/.netlify/functions/memory/context/get', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -613,8 +615,9 @@ class AICompanion {
         }
 
         try {
+            const url = `${window.location.origin}/.netlify/functions/memory/context/delete`;
             // Netlify Functions를 통해 Supabase에서 컨텍스트 삭제
-            const response = await fetch('/.netlify/functions/memory/context/delete', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -707,8 +710,9 @@ class AICompanion {
         }
 
         try {
+            const url = `${window.location.origin}/.netlify/functions/memory/context/save`;
             // Netlify Functions를 통해 Supabase에 컨텍스트 저장
-            const response = await fetch('/.netlify/functions/memory/context/save', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -747,8 +751,9 @@ class AICompanion {
     // 데이터베이스에서 사용자 컨텍스트 로드
     async loadBasicSituation() {
         try {
+            const url = `${window.location.origin}/.netlify/functions/memory/context/get`;
             // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
-            const response = await fetch('/.netlify/functions/memory/context/get', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -3200,7 +3205,8 @@ class EXASearchManager {
     // 웹 검색 수행
     async webSearch(query, numResults = 5, options = {}) {
         try {
-            const response = await fetch(this.proxyUrl, {
+            const url = `${window.location.origin}${this.proxyUrl}`;
+            const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
