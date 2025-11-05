@@ -3178,83 +3178,62 @@ class MemoryMCPClient {
     }
 }
 
-// EXA MCP 서버를 통한 웹 검색 기능
+// EXA MCP 서버를 통한 웹 검색 기능 (Netlify Function 프록시 사용)
 class EXASearchManager {
     constructor() {
-        this.apiKey = "72d1e392-592a-4d03-a9d5-22ae9e893bf5";
-        this.baseUrl = "https://api.exa.ai";
+        this.proxyUrl = "/.netlify/functions/exa-search";
     }
 
     // 웹 검색 수행
-    async webSearch(query, numResults = 5) {
+    async webSearch(query, numResults = 5, options = {}) {
         try {
-            const response = await fetch(`${this.baseUrl}/search`, {
+            const response = await fetch(this.proxyUrl, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "x-api-key": this.apiKey,
                 },
                 body: JSON.stringify({
                     query: query,
                     numResults: numResults,
-                    includeDomains: [], // 모든 도메인에서 검색
-                    excludeDomains: [], // 제외할 도메인 없음
-                    startPublishedDate: null, // 최신 정보 포함
-                    endPublishedDate: null,
+                    ...options,
                 }),
             });
 
             if (!response.ok) {
-                throw new Error(`EXA 검색 오류: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `EXA 프록시 검색 오류: ${response.status}`);
             }
 
             const data = await response.json();
             return data.results || [];
         } catch (error) {
             console.error("EXA 웹 검색 오류:", error);
+            // 챗봇 UI에 오류 메시지 표시
+            if (window.aiCompanion) {
+                window.aiCompanion.addMessage(`죄송해요, 외부 정보 검색 중 오류가 발생했어요. (오류: ${error.message})`, 'ai');
+            }
             return [];
         }
     }
 
     // 코드 관련 검색 수행
     async codeSearch(query, numResults = 5) {
-        try {
-            const response = await fetch(`${this.baseUrl}/search`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": this.apiKey,
-                },
-                body: JSON.stringify({
-                    query: query,
-                    numResults: numResults,
-                    includeDomains: [
-                        "github.com",
-                        "stackoverflow.com",
-                        "medium.com",
-                        "dev.to",
-                    ],
-                    category: "code", // 코드 관련 결과만
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error(`EXA 코드 검색 오류: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data.results || [];
-        } catch (error) {
-            console.error("EXA 코드 검색 오류:", error);
-            return [];
-        }
+        return this.webSearch(query, numResults, {
+            includeDomains: [
+                "github.com",
+                "stackoverflow.com",
+                "medium.com",
+                "dev.to",
+            ],
+            category: "code",
+        });
     }
 }
 
 // AICompanion 클래스에 EXA 검색 기능 추가
 AICompanion.prototype.initializeEXA = function () {
     this.exaManager = new EXASearchManager();
-    this.exaAvailable = true;
+    this.exaAvailable = true; // 프록시를 사용하므로 항상 사용 가능으로 설정
 };
 
 // AICompanion 클래스에 상담 지식 베이스 기능 추가
