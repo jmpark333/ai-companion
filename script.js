@@ -4047,6 +4047,35 @@ AICompanion.prototype.handleMemoryCommand = async function (userMessage) {
         return true;
     }
 
+    // "Memory 전체 삭제" 또는 "기록 다 지워" - Memory 전체 삭제 명령어
+    if (
+        (message.includes("memory") || message.includes("기록")) &&
+        (message.includes("삭제") || message.includes("지워") || message.includes("초기화") || message.includes("비워"))
+    ) {
+        this.addMessage(
+            "Memory에 저장된 모든 대화 기록을 삭제하고 있습니다... 🗑️",
+            "ai",
+        );
+        try {
+            const success = await this.memoryClient.clearAllConversations();
+            if (success) {
+                this.addMessage(
+                    "✅ Memory 기록이 모두 삭제되었습니다! 🧹\n\n새로운 대화를 시작하세요. 이제 이전 기록 없이 깨끗한 상태입니다.",
+                    "ai",
+                );
+            } else {
+                this.addMessage(
+                    "❌ 기록 삭제 중 오류가 발생했습니다. 😥",
+                    "ai",
+                );
+            }
+        } catch (error) {
+            console.error("Memory 전체 삭제 실패:", error);
+            this.addMessage("기록 삭제 중 오류가 발생했습니다. 😥", "ai");
+        }
+        return true;
+    }
+
     return false;
 };
 
