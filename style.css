@@ -882,6 +882,18 @@ body {
     line-height: 1.7;
     font-size: var(--font-size-base);
     white-space: pre-wrap;
+    min-height: 20px;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.diary-detail-content:empty:before {
+    content: "(작성 안 함)";
+    color: #999;
+    font-style: italic;
 }
 
 .diary-detail-date {
