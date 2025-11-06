@@ -146,6 +146,7 @@ async function saveConversation(body) {
     .select();
 
   if (error) {
+    console.error('Supabase 대화 저장 오류:', error.message); // Supabase 오류 로깅 추가
     return {
       statusCode: 500,
       headers,
@@ -155,6 +156,8 @@ async function saveConversation(body) {
       })
     };
   }
+
+  console.log('✅ Supabase에 대화 저장 완료:', { userId, userMessage: userMessage.substring(0, 50) + '...', aiMessage: aiMessage ? aiMessage.substring(0, 50) + '...' : 'null' }); // 성공 시 로깅 추가
 
   return {
     statusCode: 200,
