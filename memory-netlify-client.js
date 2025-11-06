@@ -9,12 +9,62 @@ class NetlifyMemoryClient {
     }
 
     generateUserId() {
-        const savedId = localStorage.getItem('memory_user_id');
-        if (savedId) return savedId;
+        // 3가지 방식으로 userId 찾기 (로컬스토리지 + 세션스토리지 + 브라우저 ID)
+        const storageKeys = ['memory_user_id', 'ai_companion_user_id', 'zai_user_id'];
+        const browserId = localStorage.getItem('browser_id') || this.generateBrowserId();
 
-        const newId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('memory_user_id', newId);
+        // 로컬스토리지에서 기존 ID 찾기
+        for (const key of storageKeys) {
+            const savedId = localStorage.getItem(key);
+            if (savedId) {
+                console.log(`✅ 기존 userId 발견: ${key} = ${savedId}`);
+                // 모든 스토리지에 동기화
+                this.syncUserIdAcrossStorage(savedId);
+                return savedId;
+            }
+        }
+
+        // 세션스토리지에서 찾아보기
+        for (const key of storageKeys) {
+            const savedId = sessionStorage.getItem(key);
+            if (savedId) {
+                console.log(`✅ 기존 userId 발견 (세션): ${key} = ${savedId}`);
+                this.syncUserIdAcrossStorage(savedId);
+                return savedId;
+            }
+        }
+
+        // 브라우저 Fingerprinting + 타임스탬프로 안정적인 ID 생성
+        const userAgent = navigator.userAgent;
+        const screenSize = `${screen.width}x${screen.height}`;
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const fingerprint = btoa(userAgent + screenSize + timeZone).slice(0, 16);
+
+        const newId = `user_${fingerprint}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        console.log(`🆕 새로운 userId 생성: ${newId}`);
+
+        this.syncUserIdAcrossStorage(newId);
         return newId;
+    }
+
+    // 브라우저 ID 생성 (장치 지문 기반)
+    generateBrowserId() {
+        let browserId = localStorage.getItem('browser_id');
+        if (!browserId) {
+            browserId = 'browser_' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+            localStorage.setItem('browser_id', browserId);
+        }
+        return browserId;
+    }
+
+    // 모든 스토리지에 userId 동기화 (안정성 향상)
+    syncUserIdAcrossStorage(userId) {
+        const storageKeys = ['memory_user_id', 'ai_companion_user_id', 'zai_user_id'];
+        storageKeys.forEach(key => {
+            localStorage.setItem(key, userId);
+            sessionStorage.setItem(key, userId);
+        });
+        console.log(`🔄 userId가 모든 스토리지에 동기화됨: ${userId}`);
     }
 
     // Netlify Function 호출 헬퍼
@@ -355,7 +405,77 @@ class NetlifyMemoryClient {
         return '일상';
     }
 
+    // ========================================
+    // 개인 컨텍스트 (Personal Context) 관리
+    // ========================================
+
+    // 개인 컨텍스트 저장
+    async savePersonalContext(contextData, contextType = 'basic_situation') {
+        try {
+            console.log('💾 개인 컨텍스트 저장 중...', { contextType, data: contextData });
+            const result = await this.callFunction('/context/save', {
+                contextType,
+                contextData
+            });
+
+            if (result.success) {
+                console.log('✅ 개인 컨텍스트 저장 성공:', result.data);
+                return result.data;
+            } else {
+                console.error('❌ 개인 컨텍스트 저장 실패:', result.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ 개인 컨텍스트 저장 중 오류:', error);
+            throw error;
+        }
+    }
+
+    // 개인 컨텍스트 조회
+    async getPersonalContext(contextType = 'basic_situation') {
+        try {
+            console.log('📖 개인 컨텍스트 조회 중...', { contextType });
+            const result = await this.callFunction('/context/get', {
+                contextType
+            });
+
+            if (result.success) {
+                console.log('✅ 개인 컨텍스트 조회 성공:', result.data);
+                return result.data; // 배열 반환 (여러 컨텍스트 가능)
+            } else {
+                console.error('❌ 개인 컨텍스트 조회 실패:', result.error);
+                return [];
+            }
+        } catch (error) {
+            console.error('❌ 개인 컨텍스트 조회 중 오류:', error);
+            return [];
+        }
+    }
+
+    // 개인 컨텍스트 삭제
+    async deletePersonalContext(contextType = 'basic_situation') {
+        try {
+            console.log('🗑️ 개인 컨텍스트 삭제 중...', { contextType });
+            const result = await this.callFunction('/context/delete', {
+                contextType
+            });
+
+            if (result.success) {
+                console.log('✅ 개인 컨텍스트 삭제 성공:', result.data);
+                return result.data;
+            } else {
+                console.error('❌ 개인 컨텍스트 삭제 실패:', result.error);
+                return null;
+            }
+        } catch (error) {
+            console.error('❌ 개인 컨텍스트 삭제 중 오류:', error);
+            throw error;
+        }
+    }
+
+    // ========================================
     // 전체 분석 리포트 생성
+    // ========================================
     async generateReport() {
         try {
             const [emotionStats, topicStats, recentConversations, summaries] = await Promise.all([

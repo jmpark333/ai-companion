@@ -530,32 +530,24 @@ class AICompanion {
         }
 
         try {
-            const url = `${window.location.origin}/.netlify/functions/memory/context/save`;
-            // Netlify Functions를 통해 Supabase에 컨텍스트 저장
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: this.getUserId(),
-                    contextType: 'basic_situation',
-                    contextData: contextData
-                })
-            });
+            // NetlifyMemoryClient를 통해 컨텍스트 저장
+            const result = await this.memoryClient.savePersonalContext(contextData, 'basic_situation');
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (result) {
                 this.basicSituation = contextData; // 메모리에도 저장
                 this.showContextStatus('✅ 개인 컨텍스트가 성공적으로 저장되었습니다.', 'success');
                 console.log('개인 컨텍스트 저장 성공:', contextData);
-                
+
                 // AI에게 컨텍스트 업데이트 알림
                 this.addMessage('✅ 개인 컨텍스트가 업데이트되었습니다. 이제부터 이 정보를 바탕으로 더 개인화된 대화를 나눌 수 있습니다.', 'ai');
+
+                // 페이지 새로고침 없이 즉시 AI 컨텍스트 업데이트
+                setTimeout(() => {
+                    this.sendContextToAIWithContext(contextData);
+                }, 500);
             } else {
-                this.showContextStatus('❌ 컨텍스트 저장에 실패했습니다: ' + result.error, 'error');
-                console.error('컨텍스트 저장 실패:', result.error);
+                this.showContextStatus('❌ 컨텍스트 저장에 실패했습니다. 다시 시도해주세요.', 'error');
+                console.error('컨텍스트 저장 실패');
             }
         } catch (error) {
             this.showContextStatus('❌ 저장 중 오류가 발생했습니다: ' + error.message, 'error');
@@ -566,36 +558,30 @@ class AICompanion {
     // 개인 컨텍스트 불러오기
     async loadPersonalContext() {
         try {
-            const url = `${window.location.origin}/.netlify/functions/memory/context/get`;
-            // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: this.getUserId(),
-                    contextType: 'basic_situation'
-                })
-            });
+            // NetlifyMemoryClient를 통해 컨텍스트 조회
+            const result = await this.memoryClient.getPersonalContext('basic_situation');
 
-            const result = await response.json();
-
-            if (result.success && result.data && result.data.length > 0) {
-                const contextData = result.data[0].context_data;
-                this.basicSituation = contextData; // 메모리에도 저장
+            if (result && result.length > 0) {
+                // 가장 최근 컨텍스트 사용
+                const latestContext = result[0].context_data || result[0];
+                this.basicSituation = latestContext;
                 this.showContextStatus('✅ 개인 컨텍스트가 성공적으로 불러왔습니다.', 'success');
-                console.log('개인 컨텍스트 로드 성공:', contextData);
+                console.log('개인 컨텍스트 로드 성공:', latestContext);
 
                 // UI에도 표시
                 this.loadPersonalContextToUI();
-                
+
                 // AI에게 컨텍스트 로드 알림
                 this.addMessage('✅ 개인 컨텍스트를 불러왔습니다. 이제부터 이 정보를 바탕으로 대화하겠습니다.', 'ai');
+
+                // 즉시 AI에게 컨텍스트 전달
+                setTimeout(() => {
+                    this.sendContextToAIWithContext(latestContext);
+                }, 500);
             } else {
                 this.showContextStatus('📄 저장된 컨텍스트가 없습니다.', 'info');
                 console.log('저장된 컨텍스트 없음');
-                
+
                 // AI에게 컨텍스트 없음 알림
                 this.addMessage('📄 저장된 개인 컨텍스트가 없습니다. 설정에서 컨텍스트를 추가하면 더 개인화된 대화를 나눌 수 있습니다.', 'ai');
             }
@@ -612,22 +598,10 @@ class AICompanion {
         }
 
         try {
-            const url = `${window.location.origin}/.netlify/functions/memory/context/delete`;
-            // Netlify Functions를 통해 Supabase에서 컨텍스트 삭제
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: this.getUserId(),
-                    contextType: 'basic_situation'
-                })
-            });
+            // NetlifyMemoryClient를 통해 컨텍스트 삭제
+            const result = await this.memoryClient.deletePersonalContext('basic_situation');
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (result) {
                 this.basicSituation = ''; // 메모리에서도 삭제
                 this.showContextStatus('✅ 개인 컨텍스트가 삭제되었습니다.', 'success');
                 console.log('개인 컨텍스트 삭제 성공');
@@ -637,12 +611,12 @@ class AICompanion {
                 if (contextTextarea) {
                     contextTextarea.value = '';
                 }
-                
+
                 // AI에게 컨텍스트 삭제 알림
                 this.addMessage('✅ 개인 컨텍스트가 삭제되었습니다. 이제부터 일반적인 대화를 나누게 됩니다.', 'ai');
             } else {
-                this.showContextStatus('❌ 컨텍스트 삭제에 실패했습니다: ' + result.error, 'error');
-                console.error('컨텍스트 삭제 실패:', result.error);
+                this.showContextStatus('❌ 컨텍스트 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
+                console.error('컨텍스트 삭제 실패');
             }
         } catch (error) {
             this.showContextStatus('❌ 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
@@ -707,27 +681,14 @@ class AICompanion {
         }
 
         try {
-            const url = `${window.location.origin}/.netlify/functions/memory/context/save`;
-            // Netlify Functions를 통해 Supabase에 컨텍스트 저장
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: this.getUserId(),
-                    contextType: 'basic_situation',
-                    contextData: contextData
-                })
-            });
+            // NetlifyMemoryClient를 통해 컨텍스트 저장
+            const result = await this.memoryClient.savePersonalContext(contextData, 'basic_situation');
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (result) {
                 this.basicSituation = contextData; // 메모리에도 저장
                 console.log('개인 컨텍스트 자동 저장 성공:', contextData);
             } else {
-                console.error('컨텍스트 자동 저장 실패:', result.error);
+                console.error('컨텍스트 자동 저장 실패');
             }
         } catch (error) {
             console.error('컨텍스트 자동 저장 오류:', error);
@@ -748,32 +709,20 @@ class AICompanion {
     // 데이터베이스에서 사용자 컨텍스트 로드
     async loadBasicSituation() {
         try {
-            const url = `${window.location.origin}/.netlify/functions/memory/context/get`;
-            // Netlify Functions를 통해 Supabase에서 컨텍스트 조회
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: this.getUserId(),
-                    contextType: 'basic_situation'
-                }),
-            });
+            // NetlifyMemoryClient를 통해 컨텍스트 조회
+            const result = await this.memoryClient.getPersonalContext('basic_situation');
 
-            if (response.ok) {
-                const result = await response.json();
-                if (result.success && result.data && result.data.length > 0) {
-                    // 가장 최근 컨텍스트 사용
-                    const latestContext = result.data[0];
-                    this.basicSituation = latestContext.context_data;
-                    console.log('✅ 기본 상황 컨텍스트 로드 완료 (데이터베이스)');
-                    return this.basicSituation;
-                }
+            if (result && result.length > 0) {
+                // 가장 최근 컨텍스트 사용
+                const latestContext = result[0].context_data || result[0];
+                this.basicSituation = latestContext;
+                console.log('✅ 기본 상황 컨텍스트 로드 완료 (데이터베이스):', latestContext);
+                return this.basicSituation;
             }
 
             // 컨텍스트가 없으면 빈 문자열 반환
             this.basicSituation = '';
+            console.log('📝 저장된 개인 컨텍스트가 없습니다.');
             return '';
         } catch (error) {
             console.warn('⚠️ 기본 상황 컨텍스트 로드 실패:', error);
@@ -2344,28 +2293,22 @@ class AICompanion {
         // 대화 기록 파일 관리 버튼 추가
         this.setupChatHistoryButtons();
 
-        // 개인 컨텍스트가 있으면 첫 메시지로 자동 전송
+        // 개인 컨텍스트가 있으면 AI에게 자동 전달
         if (this.basicSituation && this.basicSituation.trim().length > 0) {
             // 약간의 딜레이를 주어 환영 메시지가 먼저 표시되도록 함
             setTimeout(() => {
-                // 오늘 날짜 정보 생성
-                const today = new Date();
-                const dateString = today.toLocaleDateString('ko-KR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // 날짜를 맨앞에 추가한 컨텍스트 메시지
-                const contextMessage = `오늘 날짜는 ${dateString}이야. ${this.basicSituation}`;
-                
-                // AI에게 직접 컨텍스트 전달 (화면에 표시하지 않음)
-                this.sendContextToAI(contextMessage);
-            }, 1000);
+                console.log('🚀 페이지 로드 완료: 개인 컨텍스트가 있어 AI에게 자동 전달합니다.');
+                console.log('📝 컨텍스트 내용:', this.basicSituation);
+
+                // 새로운 함수를 사용하여 컨텍스트 전달
+                this.sendContextToAIWithContext(this.basicSituation);
+            }, 1500); // 1.5초로 증가 (더 안정적인 전달)
+        } else {
+            console.log('📝 저장된 개인 컨텍스트가 없습니다. 일반 모드로 시작합니다.');
         }
     };
 
-    // 컨텍스트를 AI에게 직접 전달하는 메서드
+    // 컨텍스트를 AI에게 직접 전달하는 메서드 (기존)
     sendContextToAI(contextMessage) {
         // AI에게 컨텍스트 전달 (화면에 표시하지 않음)
         // 메시지 배열에 시스템 메시지로 추가하지 않고, 바로 AI 응답 생성
@@ -2390,7 +2333,7 @@ class AICompanion {
                 const aiResponse = result.data.choices[0].message.content.trim();
                 if (aiResponse) {
                     this.addMessage(aiResponse, "ai");
-                    
+
                     // 알림 소리 재생
                     if (this.settings.soundEnabled) {
                         this.playNotificationSound();
@@ -2400,6 +2343,56 @@ class AICompanion {
         }).catch(error => {
             console.error("컨텍스트 전달 중 오류:", error);
             this.addMessage("죄송해요, 컨텍스트 전달 중 오류가 발생했습니다. 🙏", "ai");
+        });
+    }
+
+    // 개인 컨텍스트를 AI에게 직접 전달하는 메서드 (새로 추가)
+    sendContextToAIWithContext(personalContext) {
+        // 오늘 날짜 정보 생성
+        const today = new Date();
+        const dateString = today.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+
+        // 개인 컨텍스트를 AI 친화적으로 포맷팅
+        const formattedContext = `오늘 날짜는 ${dateString}입니다.
+
+**사용자의 개인 컨텍스트 정보:**
+${personalContext}
+
+위 정보는 사용자에 대한 중요한 개인 정보입니다. 이 정보를 바탕으로 사용자를 더 잘 이해하고 개인화된 대화를 나누어 주세요.`;
+
+        console.log('📤 개인 컨텍스트를 AI에게 전달 중...', formattedContext);
+
+        // AI에게 컨텍스트 전달 (화면에 표시하지 않음)
+        const messages = [
+            { role: "system", content: formattedContext },
+            // 최근 대화 없음 (첫 컨텍스트 전달이므로)
+        ];
+
+        // AI 응답 생성
+        this.apiClient.chatCompletion(messages, {
+            model: this.settings.model,
+            maxTokens: 1000, // 컨텍스트 전달용이므로 작은 값
+            temperature: 0.7,
+            stream: false,
+            thinking: { type: "disabled" }
+        }).then(result => {
+            if (result && result.success && result.data && result.data.choices && result.data.choices[0]) {
+                const aiResponse = result.data.choices[0].message.content.trim();
+                if (aiResponse) {
+                    console.log('✅ 개인 컨텍스트 전달 성공, AI 응답:', aiResponse);
+                    // 컨텍스트 전달 응답은 사용자에게 표시하지 않음 (자동 처리)
+                }
+            } else {
+                console.warn('⚠️ AI 응답이 없습니다. 컨텍스트는 저장되었지만 응답은 건너뜁니다.');
+            }
+        }).catch(error => {
+            console.error("❌ 개인 컨텍스트 전달 중 오류:", error);
+            // 오류가 있어도 사용자에게는 알리지 않음 (자동 처리)
         });
     }
 
