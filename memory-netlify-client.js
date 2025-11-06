@@ -9,14 +9,13 @@ class NetlifyMemoryClient {
     }
 
     generateUserId() {
-        // 3가지 방식으로 userId 찾기 (로컬스토리지 + 세션스토리지 + 브라우저 ID)
+        // 3가지 방식으로 userId 찾기 (로컬스토리지 우선, sessionStorage 보조)
         const storageKeys = ['memory_user_id', 'ai_companion_user_id', 'zai_user_id'];
-        const browserId = localStorage.getItem('browser_id') || this.generateBrowserId();
 
-        // 로컬스토리지에서 기존 ID 찾기
+        // 로컬스토리지에서 기존 ID 찾기 (가장 중요 - 브라우저 재시작 후에도 유지)
         for (const key of storageKeys) {
             const savedId = localStorage.getItem(key);
-            if (savedId) {
+            if (savedId && savedId.trim().length > 0 && this.isValidUserId(savedId)) {
                 console.log(`✅ 기존 userId 발견: ${key} = ${savedId}`);
                 // 모든 스토리지에 동기화
                 this.syncUserIdAcrossStorage(savedId);
@@ -24,44 +23,60 @@ class NetlifyMemoryClient {
             }
         }
 
-        // 세션스토리지에서 찾아보기
+        // sessionStorage에서 찾아보기 (브라우저 종료 전까지 유지)
         for (const key of storageKeys) {
             const savedId = sessionStorage.getItem(key);
-            if (savedId) {
+            if (savedId && savedId.trim().length > 0 && this.isValidUserId(savedId)) {
                 console.log(`✅ 기존 userId 발견 (세션): ${key} = ${savedId}`);
                 this.syncUserIdAcrossStorage(savedId);
                 return savedId;
             }
         }
 
-        // 브라우저 Fingerprinting + 타임스탬프로 안정적인 ID 생성
-        const userAgent = navigator.userAgent;
-        const screenSize = `${screen.width}x${screen.height}`;
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const fingerprint = btoa(userAgent + screenSize + timeZone).slice(0, 16);
+        // 저장된 ID가 없으면 새로운 ID 생성
+        // 더 안정적인 방식: crypto.getRandomValues() + 타임스탬프 (한글/특수문자 제거)
+        const timestamp = Date.now().toString(36); // 36진수로 변환
+        const randomArray = new Uint32Array(4);
+        crypto.getRandomValues(randomArray);
+        const randomStr = Array.from(randomArray, num => num.toString(36)).join('').slice(0, 16);
 
-        const newId = `user_${fingerprint}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const newId = `user_${timestamp}_${randomStr}`;
         console.log(`🆕 새로운 userId 생성: ${newId}`);
 
+        // 모든 스토리지에 저장 (localStorage 우선, sessionStorage 보조)
         this.syncUserIdAcrossStorage(newId);
         return newId;
     }
 
-    // 브라우저 ID 생성 (장치 지문 기반)
-    generateBrowserId() {
-        let browserId = localStorage.getItem('browser_id');
-        if (!browserId) {
-            browserId = 'browser_' + crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
-            localStorage.setItem('browser_id', browserId);
+    // userId 유효성 검증 함수 (한글/특수문자/빈 문자열 검사)
+    isValidUserId(userId) {
+        if (!userId || typeof userId !== 'string') {
+            console.warn('⚠️ userId가 null이거나 문자열이 아님:', userId);
+            return false;
         }
-        return browserId;
+
+        // 한글, 공백, 특수문자가 포함된 경우 무효
+        if (/[가-힣ㄱ-ㅎㅏ-ㅣ\s<>"/\\|?*]/.test(userId)) {
+            console.warn('⚠️ userId에 한글/공백/특수문자가 포함됨 (무효):', userId);
+            return false;
+        }
+
+        // 너무 짧은 경우 무효
+        if (userId.length < 10) {
+            console.warn('⚠️ userId가 너무 짧음 (무효):', userId);
+            return false;
+        }
+
+        return true;
     }
 
-    // 모든 스토리지에 userId 동기화 (안정성 향상)
+    // 모든 스토리지에 userId 동기화 (localStorage 우선, sessionStorage 보조)
     syncUserIdAcrossStorage(userId) {
         const storageKeys = ['memory_user_id', 'ai_companion_user_id', 'zai_user_id'];
         storageKeys.forEach(key => {
+            // localStorage에 우선 저장 (영구 저장)
             localStorage.setItem(key, userId);
+            // sessionStorage에도 저장 (브라우저 종료 전까지 유지)
             sessionStorage.setItem(key, userId);
         });
         console.log(`🔄 userId가 모든 스토리지에 동기화됨: ${userId}`);
