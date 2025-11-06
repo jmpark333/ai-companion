@@ -3699,6 +3699,12 @@ AICompanion.prototype.getUserId = function () {
 AICompanion.prototype.saveConversationPair = async function (userMessage, aiMessage) {
     if (!this.memoryMCPAvailable) return false;
 
+    // AI 응답이 임시 메시지인 경우 저장하지 않음
+    if (aiMessage.text.includes("🔄 자동으로 응답을 이어받겠습니다")) {
+        console.log("📚 임시 AI 응답이므로 Memory에 저장하지 않음:", aiMessage.text.substring(0, 50));
+        return false;
+    }
+
     try {
         // NetlifyMemoryClient에 대화 저장
         const saved = await this.memoryClient.saveConversation(
