@@ -1135,17 +1135,13 @@ class AICompanion {
             }
         }
 
-        // 사용자 기본 컨텍스트 정보 준비 (짧게 요약해서 포함)
+        // 사용자 기본 컨텍스트 정보 준비 (전체 내용 포함)
         let basicContext = '';
         if (this.basicSituation && this.basicSituation.trim().length > 0) {
-            // 긴 컨텍스트를 핵심만 추출해서 요약
-            const shortSummary = this.basicSituation.length > 500
-                ? this.basicSituation.substring(0, 500) + '...'
-                : this.basicSituation;
+            // z.AI API는 세션 유지가 안 되므로 각 요청에 컨텍스트를 강제 포함
+            basicContext = `\n\n=== 사용자 개인 정보 (중요) ===\n${this.basicSituation}\n\n위 정보는 사용자의 실제 배경입니다. 절대로 "기록에 없다" 고 하지 말고, 이 정보를 바탕으로 답변해주세요.`;
 
-            basicContext = `\n\n**🎯 사용자의 개인 컨텍스트 (중요):**\n${shortSummary}\n\n위 정보는 사용자의 현재 상황과 배경입니다. 반드시 참고해서 답변해주세요.`;
-
-            console.log('📝 개인 컨텍스트가 AI에 자동 포함됨 (요약):', shortSummary);
+            console.log('📝 개인 컨텍스트가 AI에 자동 포함됨 (전체):', this.basicSituation);
         } else {
             console.log('⚠️ 개인 컨텍스트가 없습니다. AI는 일반 모드로 응답합니다.');
         }
