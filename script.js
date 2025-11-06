@@ -540,11 +540,6 @@ class AICompanion {
 
                 // AI에게 컨텍스트 업데이트 알림
                 this.addMessage('✅ 개인 컨텍스트가 업데이트되었습니다. 이제부터 이 정보를 바탕으로 더 개인화된 대화를 나눌 수 있습니다.', 'ai');
-
-                // 페이지 새로고침 없이 즉시 AI 컨텍스트 업데이트
-                setTimeout(() => {
-                    this.sendContextToAIWithContext(contextData);
-                }, 500);
             } else {
                 this.showContextStatus('❌ 컨텍스트 저장에 실패했습니다. 다시 시도해주세요.', 'error');
                 console.error('컨텍스트 저장 실패');
@@ -573,11 +568,6 @@ class AICompanion {
 
                 // AI에게 컨텍스트 로드 알림
                 this.addMessage('✅ 개인 컨텍스트를 불러왔습니다. 이제부터 이 정보를 바탕으로 대화하겠습니다.', 'ai');
-
-                // 즉시 AI에게 컨텍스트 전달
-                setTimeout(() => {
-                    this.sendContextToAIWithContext(latestContext);
-                }, 500);
             } else {
                 this.showContextStatus('📄 저장된 컨텍스트가 없습니다.', 'info');
                 console.log('저장된 컨텍스트 없음');
@@ -729,6 +719,16 @@ class AICompanion {
             this.basicSituation = '';
             return '';
         }
+    }
+
+    // 개인 컨텍스트 로드 확인 (방어적 프로그래밍)
+    async ensurePersonalContextLoaded() {
+        if (!this.basicSituation || this.basicSituation.trim().length === 0) {
+            console.log('🔄 personal context가 아직 로드되지 않았습니다. 강제로 로드합니다...');
+            await this.loadBasicSituation();
+            return this.basicSituation && this.basicSituation.trim().length > 0;
+        }
+        return true;
     }
 
     initializeElements() {
@@ -1034,6 +1034,9 @@ class AICompanion {
     }
 
     async generateAIResponse(userMessage) {
+        // 개인 컨텍스트 로드 확인 (방어적 프로그래밍)
+        await this.ensurePersonalContextLoaded();
+
         // Memory에서 관련 이전 대화 검색 - 더 적극적으로 활용
         let memoryContext = "";
         if (this.memoryMCPAvailable) {
@@ -1134,7 +1137,14 @@ class AICompanion {
 
         // 사용자 기본 컨텍스트 정보 준비
         const basicContext = this.basicSituation ? `\n\n**사용자 기본 컨텍스트 정보:**\n${this.basicSituation}` : '';
-        
+
+        // 컨텍스트 로깅
+        if (this.basicSituation && this.basicSituation.trim().length > 0) {
+            console.log('📝 개인 컨텍스트가 AI에 자동 포함됨:', this.basicSituation);
+        } else {
+            console.log('⚠️ 개인 컨텍스트가 없습니다. AI는 일반 모드로 응답합니다.');
+        }
+
         // 컨텍스트가 없으면 사용자에게 알림
         if (!this.basicSituation) {
             // 설정 모달이 열려있지 않을 때만 알림 표시
@@ -2293,16 +2303,11 @@ class AICompanion {
         // 대화 기록 파일 관리 버튼 추가
         this.setupChatHistoryButtons();
 
-        // 개인 컨텍스트가 있으면 AI에게 자동 전달
+        // 개인 컨텍스트가 있으면 콘솔에만 표시 (AI에는 generateAIResponse에서 자동 전달됨)
         if (this.basicSituation && this.basicSituation.trim().length > 0) {
-            // 약간의 딜레이를 주어 환영 메시지가 먼저 표시되도록 함
-            setTimeout(() => {
-                console.log('🚀 페이지 로드 완료: 개인 컨텍스트가 있어 AI에게 자동 전달합니다.');
-                console.log('📝 컨텍스트 내용:', this.basicSituation);
-
-                // 새로운 함수를 사용하여 컨텍스트 전달
-                this.sendContextToAIWithContext(this.basicSituation);
-            }, 1500); // 1.5초로 증가 (더 안정적인 전달)
+            console.log('🚀 페이지 로드 완료: 개인 컨텍스트가 있습니다.');
+            console.log('📝 컨텍스트 내용:', this.basicSituation);
+            console.log('💡 참고: 컨텍스트는 다음 AI 응답 시 자동으로 포함됩니다.');
         } else {
             console.log('📝 저장된 개인 컨텍스트가 없습니다. 일반 모드로 시작합니다.');
         }
@@ -2346,55 +2351,14 @@ class AICompanion {
         });
     }
 
-    // 개인 컨텍스트를 AI에게 직접 전달하는 메서드 (새로 추가)
+    // 개인 컨텍스트를 AI에게 직접 전달하는 메서드 (주석: generateAIResponse에서 이미 자동 전달되므로 사용 안 함)
+    // Z.AI API는 system role을 지원하지 않아 오류가 발생할 수 있으므로 주석 처리
+    /*
     sendContextToAIWithContext(personalContext) {
-        // 오늘 날짜 정보 생성
-        const today = new Date();
-        const dateString = today.toLocaleDateString('ko-KR', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            weekday: 'long'
-        });
-
-        // 개인 컨텍스트를 AI 친화적으로 포맷팅
-        const formattedContext = `오늘 날짜는 ${dateString}입니다.
-
-**사용자의 개인 컨텍스트 정보:**
-${personalContext}
-
-위 정보는 사용자에 대한 중요한 개인 정보입니다. 이 정보를 바탕으로 사용자를 더 잘 이해하고 개인화된 대화를 나누어 주세요.`;
-
-        console.log('📤 개인 컨텍스트를 AI에게 전달 중...', formattedContext);
-
-        // AI에게 컨텍스트 전달 (화면에 표시하지 않음)
-        const messages = [
-            { role: "system", content: formattedContext },
-            // 최근 대화 없음 (첫 컨텍스트 전달이므로)
-        ];
-
-        // AI 응답 생성
-        this.apiClient.chatCompletion(messages, {
-            model: this.settings.model,
-            maxTokens: 1000, // 컨텍스트 전달용이므로 작은 값
-            temperature: 0.7,
-            stream: false,
-            thinking: { type: "disabled" }
-        }).then(result => {
-            if (result && result.success && result.data && result.data.choices && result.data.choices[0]) {
-                const aiResponse = result.data.choices[0].message.content.trim();
-                if (aiResponse) {
-                    console.log('✅ 개인 컨텍스트 전달 성공, AI 응답:', aiResponse);
-                    // 컨텍스트 전달 응답은 사용자에게 표시하지 않음 (자동 처리)
-                }
-            } else {
-                console.warn('⚠️ AI 응답이 없습니다. 컨텍스트는 저장되었지만 응답은 건너뜁니다.');
-            }
-        }).catch(error => {
-            console.error("❌ 개인 컨텍스트 전달 중 오류:", error);
-            // 오류가 있어도 사용자에게는 알리지 않음 (자동 처리)
-        });
+        // 이 함수는 사용하지 않음 (generateAIResponse에서 basicContext 자동 전달)
+        // 참고용으로만 남겨둠
     }
+    */
 
     // 대화 기록 저장
     saveChatHistory() {
