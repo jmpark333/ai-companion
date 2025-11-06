@@ -2395,8 +2395,60 @@ class AICompanion {
         if (this.basicSituation && this.basicSituation.trim().length > 0) {
             // 약간의 딜레이를 주어 환영 메시지가 먼저 표시되도록 함
             setTimeout(() => {
-                const contextMessage = `(자동 전송된 컨텍스트)\n${this.basicSituation}`;
-                this.sendMessageWithText(contextMessage);
+                // 오늘 날짜 정보 생성
+                const today = new Date();
+                const dateString = today.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // 날짜를 맨앞에 추가한 컨텍스트 메시지
+                const contextMessage = `오늘 날짜는 ${dateString}이야. ${this.basicSituation}`;
+                
+                // AI에게 직접 컨텍스트 전달 (화면에 표시하지 않음)
+                this.sendContextToAI(contextMessage);
+
+    // 컨텍스트를 AI에게 직접 전달하는 함수
+    sendContextToAI(contextMessage) {
+        // AI에게 컨텍스트 전달 (화면에 표시하지 않음)
+        // 메시지 배열에 시스템 메시지로 추가하지 않고, 바로 AI 응답 생성
+        const messages = [
+            { role: "system", content: contextMessage },
+            // 최근 10개의 사용자 메시지만 포함 (기억력 과부하 방지)
+            ...this.messages.slice(-20).filter(msg => msg.sender === 'user').map(msg => ({
+                role: "user",
+                content: msg.text
+            }))
+        ];
+
+        // AI 응답 생성
+        this.apiClient.chatCompletion(messages, {
+            model: this.settings.model,
+            maxTokens: this.settings.maxTokens,
+            temperature: this.settings.temperature,
+            stream: false,
+            thinking: { type: "disabled" }
+        }).then(result => {
+            if (result && result.success && result.data && result.data.choices && result.data.choices[0]) {
+                const aiResponse = result.data.choices[0].message.content.trim();
+                if (aiResponse) {
+                    this.addMessage(aiResponse, "ai");
+                    
+                    // 알림 소리 재생
+                    if (this.settings.soundEnabled) {
+                        this.playNotificationSound();
+                    }
+                }
+            }
+        }).catch(error => {
+            console.error("컨텍스트 전달 중 오류:", error);
+            this.addMessage("죄송해요, 컨텍스트 전달 중 오류가 발생했습니다. 🙏", "ai");
+        });
+    }
+                
+                // 성공 메시지만 표시
+                this.addMessage("✅ 개인 컨텍스트가 자동으로 설정되었습니다. 이제부터 이 정보를 바탕으로 대화하겠습니다.", "ai");
             }, 1000);
         }
     }
