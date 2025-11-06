@@ -2408,8 +2408,11 @@ class AICompanion {
                 
                 // AI에게 직접 컨텍스트 전달 (화면에 표시하지 않음)
                 this.sendContextToAI(contextMessage);
+            }, 1000);
+        }
+    };
 
-    // 컨텍스트를 AI에게 직접 전달하는 함수
+    // 컨텍스트를 AI에게 직접 전달하는 메서드
     sendContextToAI(contextMessage) {
         // AI에게 컨텍스트 전달 (화면에 표시하지 않음)
         // 메시지 배열에 시스템 메시지로 추가하지 않고, 바로 AI 응답 생성
@@ -2445,12 +2448,6 @@ class AICompanion {
             console.error("컨텍스트 전달 중 오류:", error);
             this.addMessage("죄송해요, 컨텍스트 전달 중 오류가 발생했습니다. 🙏", "ai");
         });
-    }
-                
-                // 성공 메시지만 표시
-                this.addMessage("✅ 개인 컨텍스트가 자동으로 설정되었습니다. 이제부터 이 정보를 바탕으로 대화하겠습니다.", "ai");
-            }, 1000);
-        }
     }
 
     // 대화 기록 저장
