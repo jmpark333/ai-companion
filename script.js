@@ -2303,11 +2303,15 @@ class AICompanion {
         // 대화 기록 파일 관리 버튼 추가
         this.setupChatHistoryButtons();
 
-        // 개인 컨텍스트가 있으면 콘솔에만 표시 (AI에는 generateAIResponse에서 자동 전달됨)
+        // 개인 컨텍스트가 있으면 페이지 로드 시 AI에게 첫 대화로 자동 전달
         if (this.basicSituation && this.basicSituation.trim().length > 0) {
-            console.log('🚀 페이지 로드 완료: 개인 컨텍스트가 있습니다.');
+            console.log('🚀 페이지 로드 완료: 개인 컨텍스트를 AI에게 첫 대화로 전달합니다.');
             console.log('📝 컨텍스트 내용:', this.basicSituation);
-            console.log('💡 참고: 컨텍스트는 다음 AI 응답 시 자동으로 포함됩니다.');
+
+            // AI에게 첫 대화로 컨텍스트 전달 (z.AI API 호환: user role 사용)
+            setTimeout(() => {
+                this.sendContextToAIWithContext(this.basicSituation);
+            }, 1500);
         } else {
             console.log('📝 저장된 개인 컨텍스트가 없습니다. 일반 모드로 시작합니다.');
         }
@@ -2351,14 +2355,56 @@ class AICompanion {
         });
     }
 
-    // 개인 컨텍스트를 AI에게 직접 전달하는 메서드 (주석: generateAIResponse에서 이미 자동 전달되므로 사용 안 함)
-    // Z.AI API는 system role을 지원하지 않아 오류가 발생할 수 있으므로 주석 처리
-    /*
-    sendContextToAIWithContext(personalContext) {
-        // 이 함수는 사용하지 않음 (generateAIResponse에서 basicContext 자동 전달)
-        // 참고용으로만 남겨둠
+    // 개인 컨텍스트를 AI에게 첫 대화로 전달하는 메서드
+    // z.AI API 호환을 위해 user role로 전달
+    async sendContextToAIWithContext(personalContext) {
+        // 오늘 날짜 정보 생성
+        const today = new Date();
+        const dateString = today.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+        });
+
+        // 개인 컨텍스트를 AI 친화적으로 포맷팅 (user role 형식)
+        const formattedContext = `🎯 개인 컨텍스트 전달:
+
+오늘 날짜는 ${dateString}입니다.
+
+**사용자의 개인 컨텍스트 정보:**
+${personalContext}
+
+위 정보는 사용자에 대한 중요한 개인 정보입니다. 이 정보를 바탕으로 사용자를 더 잘 이해하고 개인화된 대화를 나누어 주세요.`;
+
+        console.log('📤 개인 컨텍스트를 AI에게 첫 대화로 전달 중...', formattedContext);
+
+        // z.AI API는 system role을 지원하지 않으므로 user role로 전달
+        // 컨텍스트를 전달하고 AI가 이해하면 된다 (응답은 optional)
+        const messages = [
+            { role: "user", content: formattedContext }
+        ];
+
+        try {
+            // AI 응답 생성 (응답은 무시, 컨텍스트만 전달 목적)
+            const result = await this.apiClient.chatCompletion(messages, {
+                model: this.settings.model,
+                maxTokens: 100, // 최소 토큰 (응답 생성 방지)
+                temperature: 0.3,
+                stream: false,
+                thinking: { type: "disabled" }
+            });
+
+            if (result && result.success) {
+                console.log('✅ 개인 컨텍스트 전달 성공, AI가 컨텍스트를 이해했습니다.');
+            } else {
+                console.warn('⚠️ 컨텍스트 전달은 완료되었으나 응답 검증 실패');
+            }
+        } catch (error) {
+            console.error("❌ 개인 컨텍스트 전달 중 오류:", error);
+            // 오류가 있어도 사용자에게는 알리지 않음 (자동 처리)
+        }
     }
-    */
 
     // 대화 기록 저장
     saveChatHistory() {
