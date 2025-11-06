@@ -477,6 +477,70 @@ class AICompanion {
                 });
             }
 
+            // === 새로운 기능 추가: 추가로 기억할 내용 ===
+            if (personalContext) { // Ensure the context section exists
+                const additionalContextContainer = document.createElement('div');
+                additionalContextContainer.className = 'setting-group'; // Use existing class for consistent styling
+                additionalContextContainer.style.marginTop = '15px';
+                additionalContextContainer.style.borderTop = '1px solid #eee';
+                additionalContextContainer.style.paddingTop = '15px';
+
+                additionalContextContainer.innerHTML = `
+                    <label for="additionalContextInput">추가로 기억할 내용</label>
+                    <small>여기에 입력한 내용은 기존 개인 컨텍스트의 끝에 추가됩니다.</small>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <input type="text" id="additionalContextInput" placeholder="챗봇에게 알려주고 싶은 내용을 입력하세요..." style="flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <button id="addContextBtn" class="btn-primary" style="flex-shrink: 0;">추가하고 기억시키기</button>
+                    </div>
+                `;
+
+                // Insert the new section after the main context textarea's parent group
+                const mainContextGroup = personalContext.closest('.setting-group');
+                if (mainContextGroup && mainContextGroup.parentNode) {
+                     mainContextGroup.parentNode.insertBefore(additionalContextContainer, mainContextGroup.nextSibling);
+                }
+
+
+                const addContextBtn = document.getElementById('addContextBtn');
+                const additionalContextInput = document.getElementById('additionalContextInput');
+
+                if (addContextBtn && additionalContextInput && personalContext) {
+                    const addAndRemember = () => {
+                        const additionalText = additionalContextInput.value.trim();
+                        if (!additionalText) {
+                            this.showContextStatus('추가할 내용이 없습니다.', 'warning');
+                            additionalContextInput.focus();
+                            return;
+                        }
+
+                        const existingText = personalContext.value.trim();
+                        // 기존 내용이 있으면 줄바꿈과 함께 추가, 없으면 그냥 추가
+                        const newText = existingText ? `${existingText}\n- ${additionalText}` : `- ${additionalText}`;
+
+                        personalContext.value = newText;
+                        additionalContextInput.value = ''; // 입력 필드 초기화
+
+                        // 변경된 전체 내용을 저장
+                        this.savePersonalContext();
+
+                        // UI 업데이트 (문자 카운트)
+                        personalContext.dispatchEvent(new Event('input'));
+                    };
+
+                    addContextBtn.addEventListener('click', addAndRemember);
+
+                    // Enter 키로도 추가 가능
+                    additionalContextInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            addAndRemember();
+                        }
+                    });
+                }
+            }
+            // === 새로운 기능 추가 끝 ===
+
+
             // 컨텍스트 입력 시 문자 카운트 업데이트
             if (personalContext && contextCharCount) {
                 personalContext.addEventListener('input', () => {
