@@ -411,9 +411,6 @@ class AICompanion {
             streamingEnabled: true,
         };
 
-        // EXA MCP 서버 연결 상태
-        this.exaAvailable = false;
-
         // 연결 확인 및 자동 활성화
         this.memoryClient.checkConnection().then((connected) => {
             if (connected) {
@@ -1304,50 +1301,6 @@ class AICompanion {
                 throw new Error("API 키가 설정되지 않았습니다.");
             }
 
-            // 전문 상담가 모드인 경우 전문 지식 베이스와 EXA 검색으로 관련 정보 수집
-            if (this.settings.personality === "counselor") {
-                try {
-                    const personalKeywords = ["어머니", "아내", "딸", "아버지", "가족", "내", "나의", "저의"];
-                    const isPersonalQuery = personalKeywords.some(keyword => userMessage.includes(keyword));
-
-                    // 개인적인 질문이 아닐 경우에만 웹 검색 수행
-                    if (!isPersonalQuery) {
-                        // 전문 지식 베이스에서 관련 정보 검색
-                        const knowledgeBase =
-                            this.getCounselingKnowledgeBase(userMessage);
-
-                        // EXA 검색으로 최신 정보 수집
-                        const searchResults = await this.searchWithExa(userMessage);
-
-                        // 지식 베이스와 검색 결과 결합
-                        let additionalContext = "";
-
-                        if (knowledgeBase) {
-                            additionalContext += `전문 상담 지식:\n${knowledgeBase}\n\n`;
-                        }
-
-                        if (searchResults && searchResults.length > 0) {
-                            additionalContext += `최신 관련 정보:\n${searchResults.map((result) => `- ${result.title}: ${result.snippet}`).join("\n")}`;
-                        }
-
-                        if (additionalContext) {
-                            messages = [
-                                {
-                                    role: "system",
-                                    content: `${systemPrompt}\n\n${additionalContext}`,
-                                },
-                                ...recentMessages,
-                                { role: "user", content: userMessage },
-                            ];
-                        }
-                    }
-                } catch (searchError) {
-                    console.warn(
-                        "상담 정보 수집 실패, 기본 응답으로 진행:",
-                        searchError,
-                    );
-                }
-            }
 
             // 스트리밍 모드 확인
             if (this.settings.streamingEnabled) {
@@ -3245,64 +3198,7 @@ class MemoryMCPClient {
     }
 }
 
-// EXA MCP 서버를 통한 웹 검색 기능 (Netlify Function 프록시 사용)
-class EXASearchManager {
-    constructor() {
-        this.proxyUrl = "/.netlify/functions/exa-search";
-    }
 
-    // 웹 검색 수행
-    async webSearch(query, numResults = 5, options = {}) {
-        try {
-            const url = `${window.location.origin}${this.proxyUrl}`;
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    query: query,
-                    numResults: numResults,
-                    ...options,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `EXA 프록시 검색 오류: ${response.status}`);
-            }
-
-            const data = await response.json();
-            return data.results || [];
-        } catch (error) {
-            console.error("EXA 웹 검색 오류:", error);
-            // 챗봇 UI에 오류 메시지 표시
-            if (window.aiCompanion) {
-                window.aiCompanion.addMessage(`죄송해요, 외부 정보 검색 중 오류가 발생했어요. (오류: ${error.message})`, 'ai');
-            }
-            return [];
-        }
-    }
-
-    // 코드 관련 검색 수행
-    async codeSearch(query, numResults = 5) {
-        return this.webSearch(query, numResults, {
-            includeDomains: [
-                "github.com",
-                "stackoverflow.com",
-                "medium.com",
-                "dev.to",
-            ],
-            category: "code",
-        });
-    }
-}
-
-// AICompanion 클래스에 EXA 검색 기능 추가
-AICompanion.prototype.initializeEXA = function () {
-    this.exaManager = new EXASearchManager();
-    this.exaAvailable = true; // 프록시를 사용하므로 항상 사용 가능으로 설정
-};
 
 // AICompanion 클래스에 상담 지식 베이스 기능 추가
 AICompanion.prototype.getCounselingKnowledgeBase = function (userMessage) {
@@ -3814,45 +3710,6 @@ AICompanion.prototype.providePersonalizedInsights = function () {
     this.addMessage(insightMessage, "ai");
 };
 
-AICompanion.prototype.searchWithExa = async function (query) {
-    if (!this.exaAvailable) {
-        this.initializeEXA();
-    }
-
-    try {
-        // 가정 문제 관련 키워드 포함 여부 확인
-        const counselingKeywords = [
-            "가정",
-            "부부",
-            "아내",
-            "남편",
-            "자녀",
-            "아이",
-            "갈등",
-            "갈등",
-            "문제",
-            "상담",
-            "결혼",
-            "이혼",
-            "육아",
-        ];
-        const isCounselingQuery = counselingKeywords.some((keyword) =>
-            query.includes(keyword),
-        );
-
-        if (isCounselingQuery) {
-            // 가정 상담 관련 검색
-            const searchQuery = `${query} 가정 상담 심리학 해결 방안`;
-            return await this.exaManager.webSearch(searchQuery, 3);
-        } else {
-            // 일반 검색
-            return await this.exaManager.webSearch(query, 3);
-        }
-    } catch (error) {
-        console.error("EXA 검색 중 오류:", error);
-        return [];
-    }
-};
 
 // Memory MCP 서버 상태 확인
 AICompanion.prototype.checkMemoryMCPServer = async function () {
@@ -4611,9 +4468,8 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
     document.head.appendChild(style);
 
-    // AI 컴패니언 인스턴스 생성 후 EXA 기능 활성화
+    // AI 컴패니언 인스턴스 생성
     window.aiCompanion = new AICompanion();
-    window.aiCompanion.initializeEXA();
 
     // 상담 주제 토글 기능 추가
     const quickResponsesHeader = document.getElementById(
