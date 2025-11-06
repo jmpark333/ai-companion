@@ -999,13 +999,10 @@ class AICompanion {
                 if (sender === "ai") {
                     // Memory 관련 시스템 메시지(조회, 삭제 등)는 저장하지 않음
                     if (
-                        !text.includes("Memory") &&
-                        !text.includes("기록") &&
-                        !text.includes("대화") &&
-                        !text.includes("저장") &&
-                        !text.includes("삭제") &&
-                        !text.includes("조회") &&
-                        !text.includes("검색")
+                        !text.includes("Memory에서") &&
+                        !text.includes("Memory에") &&
+                        !text.includes("조회하고 있습니다") &&
+                        !text.includes("분석하고 있습니다")
                     ) {
                         const lastUserMessage = [...this.messages]
                             .reverse()
@@ -1423,12 +1420,27 @@ class AICompanion {
                 // 스트리밍 완료 후 최종 메시지로 변환
                 this.finalizeStreamingMessage(messageDiv, fullContent);
 
-                // 메시지 배열에 저장
-                this.messages.push({
+                const aiMessage = {
                     text: fullContent,
                     sender: "ai",
                     timestamp: new Date(),
-                });
+                };
+                this.messages.push(aiMessage);
+
+                // 대화 기록 저장 (localStorage)
+                this.saveChatHistory();
+
+                // Memory 서버에 대화 쌍 저장
+                if (this.memoryMCPAvailable) {
+                    const lastUserMessage = [...this.messages]
+                        .reverse()
+                        .find((msg) => msg.sender === "user");
+                    if (lastUserMessage) {
+                        this.saveConversationPair(lastUserMessage, aiMessage).catch((err) => {
+                            console.warn("Memory 대화 쌍 저장 실패 (스트리밍):", err);
+                        });
+                    }
+                }
 
                 // 상담가 모드인 경우 응답 향상
                 let enhancedResponse = fullContent;
