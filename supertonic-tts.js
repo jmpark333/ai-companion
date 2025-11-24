@@ -1,37 +1,33 @@
 // Supertonic TTS 통합 모듈
 // ONNX Runtime Web을 사용한 브라우저 기반 TTS
+// Supertonic Web Example 기반 구현
+
+import * as ort from 'onnxruntime-web';
 
 class SupertonicTTS {
     constructor() {
-        this.session = null;
+        this.textToSpeech = null;
+        this.cfgs = null;
+        this.currentStyle = null;
+        this.audioContext = null;
         this.modelLoaded = false;
         this.isLoading = false;
-        this.audioContext = null;
         
         // Netlify 환경 감지
         this.isNetlify = window.location.hostname.includes('netlify.app') ||
                          window.location.hostname.includes('netlify.com');
         
-        // 모델 URL 설정
-        this.baseUrl = 'https://huggingface.co/Supertone/supertonic/resolve/main';
-        this.modelUrls = {
-            textEncoder: `${this.baseUrl}/onnx/text_encoder.onnx`,
-            durationPredictor: `${this.baseUrl}/onnx/duration_predictor.onnx`,
-            vectorEstimator: `${this.baseUrl}/onnx/vector_estimator.onnx`,
-            vocoder: `${this.baseUrl}/onnx/vocoder.onnx`
-        };
-        this.configUrl = `${this.baseUrl}/onnx/tts.json`;
-        this.voiceStyleUrl = `${this.baseUrl}/voice_styles/F1.json`;
-        
         // 기본 설정
         this.config = {
-            totalSteps: 4,      // 추론 스텝 수 (높을수록 품질 향상)
-            speed: 1.0,         // 속도 (0.9-1.5 권장)
+            totalSteps: 5,      // 추론 스텝 수 (높을수록 품질 향상)
+            speed: 1.05,         // 속도 (0.9-1.5 권장)
             voiceStyle: 'F1'     // 음성 스타일
         };
         
-        // 모델 세션 저장
-        this.sessions = {};
+        // 모델 URL 설정
+        this.baseUrl = this.isNetlify ? 
+            'https://huggingface.co/Supertone/supertonic/resolve/main' :
+            'assets/onnx';
     }
 
     // ONNX 세션 초기화
@@ -56,54 +52,23 @@ class SupertonicTTS {
                 throw new Error('ONNX Runtime Web이 로드되지 않았습니다.');
             }
             
-            // Hugging Face에서 모델 파일 직접 로드
+            // 모델 로드
             console.log('📥 모델 파일 다운로드 중...');
             console.log(`🌐 환경: ${this.isNetlify ? 'Netlify' : '로컬'}`);
             
-            // 모든 모델 파일과 설정 파일 다운로드
-            const [textEncoderResponse, durationPredictorResponse, vectorEstimatorResponse, vocoderResponse, configResponse, voiceStyleResponse] = await Promise.all([
-                fetch(this.modelUrls.textEncoder),
-                fetch(this.modelUrls.durationPredictor),
-                fetch(this.modelUrls.vectorEstimator),
-                fetch(this.modelUrls.vocoder),
-                fetch(this.configUrl),
-                fetch(this.voiceStyleUrl)
-            ]);
+            const result = await this.loadTextToSpeech(this.baseUrl, {
+                executionProviders: ['webgpu', 'wasm'],
+                graphOptimizationLevel: 'all'
+            }, (modelName, current, total) => {
+                console.log(`🔄 모델 로딩 중 (${current}/${total}): ${modelName}`);
+            });
             
-            // 모든 파일 다운로드 확인
-            const responses = [textEncoderResponse, durationPredictorResponse, vectorEstimatorResponse, vocoderResponse, configResponse, voiceStyleResponse];
-            const responseNames = ['textEncoder', 'durationPredictor', 'vectorEstimator', 'vocoder', 'config', 'voiceStyle'];
+            this.textToSpeech = result.textToSpeech;
+            this.cfgs = result.cfgs;
             
-            for (let i = 0; i < responses.length; i++) {
-                if (!responses[i].ok) {
-                    throw new Error(`${responseNames[i]} 파일 다운로드 실패: ${responses[i].status}`);
-                }
-            }
+            // 기본 음성 스타일 로드
+            this.currentStyle = await this.loadVoiceStyle(`${this.baseUrl}/voice_styles/${this.config.voiceStyle}.json`);
             
-            // 모델 데이터 로드
-            const [textEncoderArray, durationPredictorArray, vectorEstimatorArray, vocoderArray] = await Promise.all([
-                textEncoderResponse.arrayBuffer(),
-                durationPredictorResponse.arrayBuffer(),
-                vectorEstimatorResponse.arrayBuffer(),
-                vocoderResponse.arrayBuffer()
-            ]);
-            
-            const config = await configResponse.json();
-            const voiceStyle = await voiceStyleResponse.json();
-            
-            // ONNX 세션 생성 및 모델 로드
-            console.log('🔄 ONNX 세션 생성 중...');
-            this.sessions.textEncoder = await ort.InferenceSession.create(new Uint8Array(textEncoderArray));
-            
-            this.sessions.durationPredictor = await ort.InferenceSession.create(new Uint8Array(durationPredictorArray));
-            
-            this.sessions.vectorEstimator = await ort.InferenceSession.create(new Uint8Array(vectorEstimatorArray));
-            
-            this.sessions.vocoder = await ort.InferenceSession.create(new Uint8Array(vocoderArray));
-            
-            // 설정 저장
-            this.config = { ...this.config, ...config };
-            this.voiceStyle = voiceStyle;
             this.modelLoaded = true;
             this.isLoading = false;
             
@@ -127,17 +92,19 @@ class SupertonicTTS {
         console.log('🎵 TTS 변환 시작:', text.substring(0, 50) + '...');
         
         try {
-            // 텍스트 전처리
-            const processedText = this.preprocessText(text);
-            
-            // ONNX 모델로 음성 생성
-            const audioData = await this.generateSpeech(processedText, config);
-            
-            // AudioBuffer로 변환
-            const audioBuffer = this.convertToAudioBuffer(audioData);
+            const { wav, duration } = await this.textToSpeech.call(
+                text,
+                this.currentStyle,
+                config.totalSteps,
+                config.speed,
+                0.3,
+                (step, total) => {
+                    console.log(`⏱️ 디노이징 (${step}/${total})...`);
+                }
+            );
             
             console.log('✅ TTS 변환 완료');
-            return audioBuffer;
+            return wav;
             
         } catch (error) {
             console.error('❌ TTS 변환 실패:', error);
@@ -178,9 +145,9 @@ class SupertonicTTS {
     }
 
     // 오디오 다운로드 (WAV 형식)
-    downloadWav(audioBuffer, filename = 'supertonic_output.wav') {
+    downloadWav(audioData, filename = 'supertonic_output.wav') {
         try {
-            const wavBlob = this.audioBufferToWav(audioBuffer);
+            const wavBlob = this.audioBufferToWav(audioData);
             const url = URL.createObjectURL(wavBlob);
             
             const a = document.createElement('a');
@@ -206,97 +173,112 @@ class SupertonicTTS {
         // 기본적인 텍스트 정리
         return text
             .trim()
-            .replace(/[^\w\s\uAC00-\uD7FF\uF900-\uFAFF\d]/g, '') // 특수문자 제거
+            .replace(/[^\w\s\uAC00-\uD7FF\uF900-\uFAFF\d.,!?]/g, '') // 특수문자 제거
             .replace(/\s+/g, ' ') // 여러 공백을 하나로
             .substring(0, 500); // 최대 길이 제한
     }
 
-    // ONNX 모델로 음성 생성 (Supertonic 파이프라인)
-    async generateSpeech(text, config) {
+    // 음성 스타일 로드
+    async loadVoiceStyle(stylePath) {
         try {
-            console.log('🎵 텍스트 전처리 중...');
-            
-            // 1. 텍스트 전처리 및 토큰화
-            const textTokens = await this.preprocessText(text);
-            console.log('토큰화 완료:', textTokens.length, '토큰');
-            
-            // 2. 텍스트 인코더 실행
-            console.log('🔄 텍스트 인코딩 중...');
-            const textEncoderInputs = {
-                input_ids: new ort.Tensor(new BigInt64Array(textTokens), [1, textTokens.length], 'int64'),
-                style_tokens: new ort.Tensor(new Float32Array(this.voiceStyle.style_tokens), [1, this.voiceStyle.style_tokens.length], 'float32')
-            };
-            
-            const textEncoderOutputs = await this.sessions.textEncoder.run(textEncoderInputs);
-            const textEmbeddings = textEncoderOutputs.text_embeddings;
-            
-            // 3. 지속 시간 예측
-            console.log('⏱️ 지속 시간 예측 중...');
-            const durationInputs = {
-                text_embeddings: textEmbeddings,
-                style_tokens: textEncoderInputs.style_tokens
-            };
-            
-            const durationOutputs = await this.sessions.durationPredictor.run(durationInputs);
-            const durations = durationOutputs.durations;
-            
-            // 4. 벡터 추정
-            console.log('🔊 벡터 추정 중...');
-            const vectorInputs = {
-                text_embeddings: textEmbeddings,
-                durations: durations,
-                style_tokens: textEncoderInputs.style_tokens,
-                speed: new ort.Tensor(new Float32Array([config.speed]), [1], 'float32')
-            };
-            
-            const vectorOutputs = await this.sessions.vectorEstimator.run(vectorInputs);
-            const latents = vectorOutputs.latents;
-            
-            // 5. 보코더로 오디오 생성
-            console.log('🎶 오디오 생성 중...');
-            const vocoderInputs = {
-                latents: latents
-            };
-            
-            const vocoderOutputs = await this.sessions.vocoder.run(vocoderInputs);
-            const audioWaveform = vocoderOutputs.audio;
-            
-            console.log('✅ 음성 생성 완료');
-            return audioWaveform.data;
-            
+            const response = await fetch(stylePath);
+            if (!response.ok) {
+                throw new Error(`음성 스타일 로드 실패: ${response.status}`);
+            }
+            return await response.json();
         } catch (error) {
-            console.error('❌ 음성 생성 실패:', error);
+            console.error('음성 스타일 로드 실패:', error);
             throw error;
         }
     }
 
-    // 텍스트 전처리 및 토큰화
-    async preprocessText(text) {
-        // 기본적인 텍스트 정리
-        const cleanText = text
-            .trim()
-            .replace(/[^\w\s\uAC00-\uD7FF\uF900-\uFAFF\d.,!?]/g, '') // 특수문자 제거
-            .replace(/\s+/g, ' ') // 여러 공백을 하나로
-            .substring(0, 500); // 최대 길이 제한
+    // 텍스트를 청크로 분할
+    chunkText(text, maxLen = 300) {
+        if (typeof text !== 'string') {
+            throw new Error(`chunkText expects a string, got ${typeof text}`);
+        }
         
-        // 간단한 문자 토큰화 (실제로는 더 복잡한 토크나이저 필요)
-        const tokens = [];
-        for (let char of cleanText) {
-            // 영어 소문자로 변환
-            const lowerChar = char.toLowerCase();
-            // ASCII 코드로 변환 (간단한 구현)
-            const charCode = lowerChar.charCodeAt(0);
-            if (charCode >= 32 && charCode <= 126) { // 출력 가능한 ASCII 문자
-                tokens.push(BigInt(charCode - 32)); // 0부터 시작하도록 조정
+        // 문단으로 분할
+        const paragraphs = text.trim().split(/\n\s*\n+/).filter(p => p.trim());
+        
+        const chunks = [];
+        
+        for (let paragraph of paragraphs) {
+            paragraph = paragraph.trim();
+            if (!paragraph) continue;
+            
+            // 문장 경계로 분할
+            const sentences = paragraph.split(/(?<!Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Sr\.|Jr\.|Ph\.D\.|etc\.|e\.g\.|i\.e\.|vs\.|Inc\.|Ltd\.|Co\.|Corp\.|St\.|Ave\.|Blvd\.)(?<!\b[A-Z]\.)(?<=[.!?])\s+/);
+            
+            let currentChunk = "";
+            
+            for (let sentence of sentences) {
+                if (currentChunk.length + sentence.length + 1 <= maxLen) {
+                    currentChunk += (currentChunk ? " " : "") + sentence;
+                } else {
+                    if (currentChunk) {
+                        chunks.push(currentChunk.trim());
+                    }
+                    currentChunk = sentence;
+                }
+            }
+            
+            if (currentChunk) {
+                chunks.push(currentChunk.trim());
             }
         }
         
-        // 최소한 하나의 토큰이 있도록 보장
-        if (tokens.length === 0) {
-            tokens.push(BigInt(0)); // 공백 문자
+        return chunks;
+    }
+
+    // 텍스트를 음성으로 변환하는 핵심 함수
+    async loadTextToSpeech(onnxDir, sessionOptions = {}, progressCallback = null) {
+        console.log('WebAssembly/WebGPU를 사용하여 추론');
+        
+        const cfgs = await this.loadCfgs(onnxDir);
+        
+        const modelPaths = [
+            { name: 'Duration Predictor', path: `${onnxDir}/duration_predictor.onnx` },
+            { name: 'Text Encoder', path: `${onnxDir}/text_encoder.onnx` },
+            { name: 'Vector Estimator', path: `${onnxDir}/vector_estimator.onnx` },
+            { name: 'Vocoder', path: `${onnxDir}/vocoder.onnx` }
+        ];
+        
+        const sessions = [];
+        for (let i = 0; i < modelPaths.length; i++) {
+            if (progressCallback) {
+                progressCallback(modelPaths[i].name, i + 1, modelPaths.length);
+            }
+            const session = await this.loadOnnx(modelPaths[i].path, sessionOptions);
+            sessions.push(session);
         }
         
-        return tokens;
+        const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = sessions;
+        
+        const textProcessor = await this.loadTextProcessor(onnxDir);
+        const textToSpeech = new TextToSpeech(cfgs, textProcessor, dpOrt, textEncOrt, vectorEstOrt, vocoderOrt);
+        
+        return { textToSpeech, cfgs };
+    }
+
+    // 설정 로드
+    async loadCfgs(onnxDir) {
+        const response = await fetch(`${onnxDir}/tts.json`);
+        const cfgs = await response.json();
+        return cfgs;
+    }
+
+    // 텍스트 프로세서 로드
+    async loadTextProcessor(onnxDir) {
+        const response = await fetch(`${onnxDir}/unicode_indexer.json`);
+        const indexer = await response.json();
+        return new UnicodeProcessor(indexer);
+    }
+
+    // ONNX 모델 로드
+    async loadOnnx(onnxPath, options) {
+        const session = await ort.InferenceSession.create(onnxPath, options);
+        return session;
     }
 
     // AudioBuffer로 변환
@@ -315,13 +297,16 @@ class SupertonicTTS {
     }
 
     // AudioBuffer를 WAV Blob으로 변환
-    audioBufferToWav(audioBuffer) {
-        const length = audioBuffer.length;
-        const sampleRate = audioBuffer.sampleRate;
-        const numberOfChannels = audioBuffer.numberOfChannels;
+    audioBufferToWav(audioData) {
+        const sampleRate = 44100;
+        const numChannels = 1;
+        const bitsPerSample = 16;
+        const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+        const blockAlign = numChannels * bitsPerSample / 8;
+        const dataSize = audioData.length * 2;
         
         // WAV 헤더 생성
-        const buffer = new ArrayBuffer(44 + length * 2);
+        const buffer = new ArrayBuffer(44 + dataSize);
         const view = new DataView(buffer);
         
         // RIFF 헤더
@@ -332,29 +317,339 @@ class SupertonicTTS {
         };
         
         writeString(0, 'RIFF');
-        view.setUint32(4, 36 + length * 2, true); // 파일 크기
+        view.setUint32(4, 36 + dataSize, true);
         writeString(8, 'WAVE');
         writeString(12, 'fmt ');
-        view.setUint32(16, 16, true); // fmt 청크 크기
-        view.setUint16(20, 1, true); // 오디오 포맷 (PCM)
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true); // PCM
         view.setUint16(22, 1, true); // 채널 수
-        view.setUint32(24, sampleRate, true); // 샘플링 레이트
-        view.setUint32(28, sampleRate * 2, true); // 바이트 레이트 (샘플링 레이트 * 채널 * 비트/8)
-        view.setUint16(32, numberOfChannels * 16, true); // 블록 정렬
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
         view.setUint16(34, 16, true); // 비트 깊이
         writeString(36, 'data');
-        view.setUint32(40, length * 2, true); // 데이터 크기
+        view.setUint32(40, dataSize, true);
         
         // 오디오 데이터 쓰기
-        const channelData = audioBuffer.getChannelData(0);
         let offset = 44;
-        for (let i = 0; i < length; i++) {
-            const sample = Math.max(-1, Math.min(1, channelData[i])); // 클리핑
+        for (let i = 0; i < audioData.length; i++) {
+            const sample = Math.max(-1, Math.min(1, audioData[i]));
             view.setInt16(offset, sample * 0x7FFF, true);
             offset += 2;
         }
         
         return new Blob([buffer], { type: 'audio/wav' });
+    }
+}
+
+// 유니코드 텍스트 프로세서
+class UnicodeProcessor {
+    constructor(indexer) {
+        this.indexer = indexer;
+    }
+
+    call(textList) {
+        const processedTexts = textList.map(text => this.preprocessText(text));
+        
+        const textIdsLengths = processedTexts.map(text => text.length);
+        const maxLen = Math.max(...textIdsLengths);
+        
+        const textIds = processedTexts.map(text => {
+            const row = new Array(maxLen).fill(0);
+            for (let j = 0; j < text.length; j++) {
+                const codePoint = text.codePointAt(j);
+                row[j] = (codePoint < this.indexer.length) ? this.indexer[codePoint] : -1;
+            }
+            return row;
+        });
+        
+        const textMask = this.getTextMask(textIdsLengths);
+        return { textIds, textMask };
+    }
+
+    preprocessText(text) {
+        // 기본 텍스트 정규화
+        text = text.normalize('NFKD');
+
+        // 이모지 제거
+        const emojiPattern = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]+/gu;
+        text = text.replace(emojiPattern, '');
+
+        // 다양한 대시와 기호 교체
+        const replacements = {
+            '–': '-',
+            '‑': '-',
+            '—': '-',
+            '¯': ' ',
+            '_': ' ',
+            '"': '"',
+            '"': '"',
+            '\u2018': "'",
+            '\u2019': "'",
+            '´': "'",
+            '`': "'",
+            '[': ' ',
+            ']': ' ',
+            '|': ' ',
+            '/': ' ',
+            '#': ' ',
+            '→': ' ',
+            '←': ' ',
+        };
+        for (const [k, v] of Object.entries(replacements)) {
+            text = text.replaceAll(k, v);
+        }
+
+        // 특수 기호 제거
+        text = text.replace(/[♥☆♡©\\]/g, '');
+
+        return text;
+    }
+
+    getTextMask(lengths, maxLen = null) {
+        const actualMaxLen = maxLen || Math.max(...lengths);
+        return lengths.map(len => {
+            const row = new Array(actualMaxLen).fill(0.0);
+            for (let j = 0; j < Math.min(len, actualMaxLen); j++) {
+                row[j] = 1.0;
+            }
+            return [row];
+        });
+    }
+}
+
+// 텍스트를 음성으로 변환하는 클래스
+class TextToSpeech {
+    constructor(cfgs, textProcessor, dpOrt, textEncOrt, vectorEstOrt, vocoderOrt) {
+        this.cfgs = cfgs;
+        this.textProcessor = textProcessor;
+        this.dpOrt = dpOrt;
+        this.textEncOrt = textEncOrt;
+        this.vectorEstOrt = vectorEstOrt;
+        this.vocoderOrt = vocoderOrt;
+        this.sampleRate = 44100;
+    }
+
+    async call(text, style, totalStep, speed = 1.05, silenceDuration = 0.3, progressCallback = null) {
+        const textList = this.chunkText(text);
+        let wavCat = [];
+        let durCat = 0;
+        
+        for (const chunk of textList) {
+            const { wav, duration } = await this._infer([chunk], style, totalStep, speed, progressCallback);
+            
+            if (wavCat.length === 0) {
+                wavCat = wav;
+                durCat = duration[0];
+            } else {
+                const silenceLen = Math.floor(silenceDuration * this.sampleRate);
+                const silence = new Array(silenceLen).fill(0);
+                wavCat = [...wavCat, ...silence, ...wav];
+                durCat += duration[0] + silenceDuration;
+            }
+        }
+        
+        return { wav: wavCat, duration: [durCat] };
+    }
+
+    async _infer(textList, style, totalStep, speed = 1.05, progressCallback = null) {
+        const bsz = textList.length;
+        
+        // 텍스트 처리
+        const { textIds, textMask } = this.textProcessor.call(textList);
+        
+        const textIdsFlat = new BigInt64Array(textIds.flat().map(x => BigInt(x)));
+        const textIdsShape = [bsz, textIds[0].length];
+        const textIdsTensor = new ort.Tensor('int64', textIdsFlat, textIdsShape);
+        
+        const textMaskFlat = new Float32Array(textMask.flat(2));
+        const textMaskShape = [bsz, 1, textMask[0][0].length];
+        const textMaskTensor = new ort.Tensor('float32', textMaskFlat, textMaskShape);
+        
+        // 지속 시간 예측
+        const dpOutputs = await this.dpOrt.run({
+            text_ids: textIdsTensor,
+            style_dp: style.dp,
+            text_mask: textMaskTensor
+        });
+        const duration = Array.from(dpOutputs.duration.data);
+        
+        // 속도 적용
+        for (let i = 0; i < duration.length; i++) {
+            duration[i] /= speed;
+        }
+        
+        // 텍스트 인코딩
+        const textEncOutputs = await this.textEncOrt.run({
+            text_ids: textIdsTensor,
+            style_ttl: style.ttl,
+            text_mask: textMaskTensor
+        });
+        const textEmb = textEncOutputs.text_emb;
+        
+        // 노이즈 잠재 샘플링
+        let { xt, latentMask } = this.sampleNoisyLatent(
+            duration,
+            this.cfgs.ae.base_chunk_size,
+            this.cfgs.ttl.chunk_compress_factor,
+            this.cfgs.ttl.latent_dim
+        );
+        
+        const latentMaskFlat = new Float32Array(latentMask.flat(2));
+        const latentMaskShape = [bsz, 1, latentMask[0][0].length];
+        const latentMaskTensor = new ort.Tensor('float32', latentMaskFlat, latentMaskShape);
+        
+        // 상수 배열 준비
+        const totalStepArray = new Float32Array(bsz).fill(totalStep);
+        const totalStepTensor = new ort.Tensor('float32', totalStepArray, [bsz]);
+        
+        // 디노이징 루프
+        for (let step = 0; step < totalStep; step++) {
+            if (progressCallback) {
+                progressCallback(step + 1, totalStep);
+            }
+            
+            const currentStepArray = new Float32Array(bsz).fill(step);
+            const currentStepTensor = new ort.Tensor('float32', currentStepArray, [bsz]);
+            
+            const xtFlat = new Float32Array(xt.flat(2));
+            const xtShape = [bsz, xt[0].length, xt[0][0].length];
+            const xtTensor = new ort.Tensor('float32', xtFlat, xtShape);
+            
+            const vectorEstOutputs = await this.vectorEstOrt.run({
+                noisy_latent: xtTensor,
+                text_emb: textEmb,
+                style_ttl: style.ttl,
+                latent_mask: latentMaskTensor,
+                text_mask: textMaskTensor,
+                current_step: currentStepTensor,
+                total_step: totalStepTensor
+            });
+            
+            const denoised = Array.from(vectorEstOutputs.denoised_latent.data);
+            
+            // 3D로 재구성
+            const latentDim = xt[0].length;
+            const latentLen = xt[0][0].length;
+            xt = [];
+            let idx = 0;
+            for (let b = 0; b < bsz; b++) {
+                const batch = [];
+                for (let d = 0; d < latentDim; d++) {
+                    const row = [];
+                    for (let t = 0; t < latentLen; t++) {
+                        row.push(denoised[idx++]);
+                    }
+                    batch.push(row);
+                }
+                xt.push(batch);
+            }
+        }
+        
+        // 파형 생성
+        const finalXtFlat = new Float32Array(xt.flat(2));
+        const finalXtShape = [bsz, xt[0].length, xt[0][0].length];
+        const finalXtTensor = new ort.Tensor('float32', finalXtFlat, finalXtShape);
+        
+        const vocoderOutputs = await this.vocoderOrt.run({
+            latent: finalXtTensor
+        });
+        
+        const wav = Array.from(vocoderOutputs.wav_tts.data);
+        
+        return { wav, duration };
+    }
+
+    sampleNoisyLatent(duration, sampleRate, baseChunkSize, chunkCompress, latentDim) {
+        const bsz = duration.length;
+        const maxDur = Math.max(...duration);
+        
+        const wavLenMax = Math.floor(maxDur * sampleRate);
+        const wavLengths = duration.map(d => Math.floor(d * sampleRate));
+        
+        const chunkSize = baseChunkSize * chunkCompress;
+        const latentLen = Math.floor((wavLenMax + chunkSize - 1) / chunkSize);
+        const latentDimVal = latentDim * chunkCompress;
+        
+        const xt = [];
+        for (let b = 0; b < bsz; b++) {
+            const batch = [];
+            for (let d = 0; d < latentDimVal; d++) {
+                const row = [];
+                for (let t = 0; t < latentLen; t++) {
+                    // Box-Muller 변환
+                    const u1 = Math.max(0.0001, Math.random());
+                    const u2 = Math.random();
+                    const val = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+                    row.push(val);
+                }
+                batch.push(row);
+            }
+            xt.push(batch);
+        }
+        
+        const latentLengths = wavLengths.map(len => Math.floor((len + chunkSize - 1) / chunkSize));
+        const latentMask = this.lengthToMask(latentLengths, latentLen);
+        
+        // 마스크 적용
+        for (let b = 0; b < bsz; b++) {
+            for (let d = 0; d < latentDimVal; d++) {
+                for (let t = 0; t < latentLen; t++) {
+                    xt[b][d][t] *= latentMask[b][0][t];
+                }
+            }
+        }
+        
+        return { xt, latentMask };
+    }
+
+    lengthToMask(lengths, maxLen = null) {
+        const actualMaxLen = maxLen || Math.max(...lengths);
+        return lengths.map(len => {
+            const row = new Array(actualMaxLen).fill(0.0);
+            for (let j = 0; j < Math.min(len, actualMaxLen); j++) {
+                row[j] = 1.0;
+            }
+            return [row];
+        });
+    }
+
+    chunkText(text, maxLen = 300) {
+        if (typeof text !== 'string') {
+            throw new Error(`chunkText expects a string, got ${typeof text}`);
+        }
+        
+        // 문단으로 분할
+        const paragraphs = text.trim().split(/\n\s*\n+/).filter(p => p.trim());
+        
+        const chunks = [];
+        
+        for (let paragraph of paragraphs) {
+            paragraph = paragraph.trim();
+            if (!paragraph) continue;
+            
+            // 문장 경계로 분할
+            const sentences = paragraph.split(/(?<!Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Sr\.|Jr\.|Ph\.D\.|etc\.|e\.g\.|i\.e\.|vs\.|Inc\.|Ltd\.|Co\.|Corp\.|St\.|Ave\.|Blvd\.)(?<!\b[A-Z]\.)(?<=[.!?])\s+/);
+            
+            let currentChunk = "";
+            
+            for (let sentence of sentences) {
+                if (currentChunk.length + sentence.length + 1 <= maxLen) {
+                    currentChunk += (currentChunk ? " " : "") + sentence;
+                } else {
+                    if (currentChunk) {
+                        chunks.push(currentChunk.trim());
+                    }
+                    currentChunk = sentence;
+                }
+            }
+            
+            if (currentChunk) {
+                chunks.push(currentChunk.trim());
+            }
+        }
+        
+        return chunks;
     }
 }
 
