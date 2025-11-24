@@ -26,8 +26,8 @@ class SupertonicTTS {
         };
         
         // 모델 URL 설정
-        this.baseUrl = this.isNetlify ? 
-            'https://huggingface.co/Supertone/supertonic/resolve/main' :
+        this.baseUrl = this.isNetlify ?
+            'https://huggingface.co/Supertone/supertonic/resolve/main/onnx' :
             'assets/onnx';
     }
 
@@ -68,7 +68,7 @@ class SupertonicTTS {
             this.cfgs = result.cfgs;
             
             // 기본 음성 스타일 로드
-            this.currentStyle = await this.loadVoiceStyle(`${this.baseUrl}/voice_styles/${this.config.voiceStyle}.json`);
+            this.currentStyle = await this.loadVoiceStyle(`https://huggingface.co/Supertone/supertonic/resolve/main/voice_styles/${this.config.voiceStyle}.json`);
             
             this.modelLoaded = true;
             this.isLoading = false;
