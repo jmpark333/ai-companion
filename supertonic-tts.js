@@ -93,17 +93,13 @@ class SupertonicTTS {
             
             // ONNX 세션 생성 및 모델 로드
             console.log('🔄 ONNX 세션 생성 중...');
-            this.sessions.textEncoder = await ort.InferenceSession.create();
-            await this.sessions.textEncoder.loadModel(new Uint8Array(textEncoderArray));
+            this.sessions.textEncoder = await ort.InferenceSession.create(new Uint8Array(textEncoderArray));
             
-            this.sessions.durationPredictor = await ort.InferenceSession.create();
-            await this.sessions.durationPredictor.loadModel(new Uint8Array(durationPredictorArray));
+            this.sessions.durationPredictor = await ort.InferenceSession.create(new Uint8Array(durationPredictorArray));
             
-            this.sessions.vectorEstimator = await ort.InferenceSession.create();
-            await this.sessions.vectorEstimator.loadModel(new Uint8Array(vectorEstimatorArray));
+            this.sessions.vectorEstimator = await ort.InferenceSession.create(new Uint8Array(vectorEstimatorArray));
             
-            this.sessions.vocoder = await ort.InferenceSession.create();
-            await this.sessions.vocoder.loadModel(new Uint8Array(vocoderArray));
+            this.sessions.vocoder = await ort.InferenceSession.create(new Uint8Array(vocoderArray));
             
             // 설정 저장
             this.config = { ...this.config, ...config };
