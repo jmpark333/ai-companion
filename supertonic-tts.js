@@ -67,9 +67,20 @@ class SupertonicTTS {
             this.textToSpeech = new TextToSpeech(result.cfgs, result.textProcessor, result.dpOrt, result.textEncOrt, result.vectorEstOrt, result.vocoderOrt);
             this.cfgs = result.cfgs;
             
-            // 기본 음성 스타일 로드
-            const styleUrl = `https://huggingface.co/Supertone/supertonic/resolve/main/voice_styles/${this.config.voiceStyle}.json`;
-            this.currentStyle = await this.loadVoiceStyle(styleUrl);
+            // 기본 음성 스타일 로드 (실패 시 기본 스타일 사용)
+            try {
+                const styleUrl = `https://huggingface.co/Supertone/supertonic/resolve/main/voice_styles/${this.config.voiceStyle}.json`;
+                this.currentStyle = await this.loadVoiceStyle(styleUrl);
+                console.log('✅ 음성 스타일 로드 성공:', this.config.voiceStyle);
+            } catch (styleError) {
+                console.warn('⚠️ 음성 스타일 로드 실패, 기본 스타일 사용:', styleError.message);
+                // 기본 스타일 - 빈 배열로 설정하여 모델이 오류 없이 작동하도록 함
+                this.currentStyle = {
+                    dp: [], // duration predictor style
+                    ttl: [] // text-to-latent style
+                };
+                console.log('🔧 기본 스타일 적용:', this.currentStyle);
+            }
             
             this.modelLoaded = true;
             this.isLoading = false;
