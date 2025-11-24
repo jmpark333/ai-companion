@@ -287,6 +287,35 @@ class SupertonicTTS {
     // 텍스트를 음성으로 변환하고 재생
     async speak(text, options = {}) {
         try {
+            // TTS 기능을 일시적으로 비활성화하고 사용자에게 알림
+            console.warn('⚠️ TTS 기능이 일시적으로 비활성화되어 있습니다.');
+            console.warn('🔧 현재 ONNX TTS 모델의 입력 형태 문제가 해결 중입니다.');
+            console.warn('💡 짧은 텍스트는 브라우저의 기본 Web Speech API를 사용해보세요.');
+            
+            // Web Speech API 폴백 사용 시도
+            if ('speechSynthesis' in window) {
+                console.log('🔄 Web Speech API로 음성 변환 시도...');
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                
+                return new Promise((resolve, reject) => {
+                    utterance.onend = () => {
+                        console.log('✅ Web Speech API 음성 재생 완료');
+                        resolve(true);
+                    };
+                    utterance.onerror = (error) => {
+                        console.error('❌ Web Speech API 오류:', error);
+                        reject(error);
+                    };
+                    speechSynthesis.speak(utterance);
+                });
+            } else {
+                throw new Error('이 브라우저는 Web Speech API를 지원하지 않습니다.');
+            }
+
+            /* 원래 TTS 코드 - 문제 해결 후 다시 활성화
             // 모델이 로드되지 않았으면 초기화
             if (!this.modelLoaded) {
                 console.log('TTS 모델이 초기화되지 않았습니다. 초기화 중...');
@@ -330,6 +359,8 @@ class SupertonicTTS {
             }
 
             return true;
+            */
+
         } catch (error) {
             console.error('TTS 변환 및 재생 실패:', error);
             throw new Error(`TTS 재생 실패: ${error.message}`);
