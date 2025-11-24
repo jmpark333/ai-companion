@@ -24,11 +24,9 @@ class SupertonicTTS {
             speed: 1.05,         // 속도 (0.9-1.5 권장)
             voiceStyle: 'F1'     // 음성 스타일
         };
-        
-        // 모델 URL 설정
-        // 빌드 시 다운로드된 models/tts를 기본으로 사용 (Netlify/로컬 모두 동일)
-        // 절대 경로 사용 ('/'로 시작)하여 하위 경로에서도 올바르게 접근하도록 함
-        this.baseUrl = '/models/tts';
+
+        // 모델 URL 설정 - models 경로의 문제 해결을 위해 assets/tts로 변경
+        this.baseUrl = '/assets/tts';
             
         console.log(`🔊 Supertonic TTS 설정: 기본 모드`);
         console.log(`📂 모델 경로: ${this.baseUrl}`);
@@ -161,14 +159,33 @@ class SupertonicTTS {
         const fullUrl = `${window.location.origin}${onnxDir}/tts.json`;
         console.log(`🔗 전체 URL: ${fullUrl}`);
 
+        // 모든 헤더 정보 출력
+        console.log(`🌐 브라우저 정보: ${navigator.userAgent}`);
+        console.log(`📍 현재 호스트: ${window.location.hostname}`);
+        console.log(`🔗 Origin: ${window.location.origin}`);
+
         // 먼저 상대 경로 시도
-        let response = await fetch(`${onnxDir}/tts.json`);
+        let response = await fetch(`${onnxDir}/tts.json`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            }
+        });
+
         console.log(`📋 상대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
+        console.log(`📋 모든 응답 헤더:`, Object.fromEntries(response.headers.entries()));
 
         // 상대 경로가 실패하면 절대 경로 시도
         if (!response.ok) {
             console.log(`🔄 상대 경로 실패, 절대 경로 시도: ${fullUrl}`);
-            response = await fetch(fullUrl);
+            response = await fetch(fullUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
             console.log(`📋 절대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
         }
 
@@ -183,6 +200,7 @@ class SupertonicTTS {
         // 응답 텍스트 읽기 (한 번만 읽어야 함)
         const text = await response.text();
         console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
+        console.log(`📏 응답 길이: ${text.length} 바이트`);
 
         // HTML 응답 감지 - 읽은 텍스트로 검사
         const isHtmlContent = text.trim().toLowerCase().startsWith('<!doctype') ||
@@ -195,7 +213,8 @@ class SupertonicTTS {
             console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
             console.error(`🔗 전체 URL: ${fullUrl}`);
             console.error(`📋 Content-Type: ${contentType}`);
-            console.error(`📄 응답 내용 (300자): ${text.substring(0, 300)}...`);
+            console.error(`📄 응답 내용 (500자): ${text.substring(0, 500)}...`);
+            console.error(`🔍 HTML 응답 원인 분석: 헤더는 JSON이지만 내용은 HTML입니다.`);
             throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 서버가 HTML을 반환했습니다. URL: ${fullUrl}`);
         }
 
@@ -205,7 +224,7 @@ class SupertonicTTS {
             return cfgs;
         } catch (error) {
             console.error(`❌ JSON 파싱 실패: ${error.message}`);
-            console.error(`📄 응답 내용 (500자): ${text.substring(0, 500)}`);
+            console.error(`📄 응답 내용 (1000자): ${text.substring(0, 1000)}`);
             throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답이 JSON이 아닙니다.`);
         }
     }

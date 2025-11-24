@@ -62,7 +62,22 @@
     Pragma = "no-cache"
     Expires = "0"
 
-# JSON 모델 파일을 위한 MIME 타입 설정
+# TTS JSON 모델 파일을 위한 강력한 헤더 설정
+[[headers]]
+  for = "/models/tts/tts.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/models/tts/unicode_indexer.json"
+  [headers.values]
+    Content-Type = "application/json"
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Content-Type-Options = "nosniff"
+
+# 모든 JSON 파일을 위한 기본 MIME 타입 설정
 [[headers]]
   for = "*.json"
   [headers.values]
