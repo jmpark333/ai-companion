@@ -165,15 +165,32 @@ class SupertonicTTS {
         if (contentType && contentType.includes('text/html')) {
             throw new Error(`TTS 설정 파일을 찾을 수 없습니다 (서버에 모델 파일이 없거나 배포 중일 수 있습니다). 경로: ${onnxDir}/tts.json`);
         }
-        const cfgs = await response.json();
-        return cfgs;
+        const text = await response.text();
+        try {
+            const cfgs = JSON.parse(text);
+            return cfgs;
+        } catch (error) {
+            throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답 내용: ${text.substring(0, 200)}...`);
+        }
     }
 
     // 텍스트 프로세서 로드
     async loadTextProcessor(onnxDir) {
         const response = await fetch(`${onnxDir}/unicode_indexer.json`);
-        const indexer = await response.json();
-        return new UnicodeProcessor(indexer);
+        if (!response.ok) {
+            throw new Error(`유니코드 인덱서 파일 로드 실패: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+            throw new Error(`유니코드 인덱서 파일을 찾을 수 없습니다. 경로: ${onnxDir}/unicode_indexer.json`);
+        }
+        const text = await response.text();
+        try {
+            const indexer = JSON.parse(text);
+            return new UnicodeProcessor(indexer);
+        } catch (error) {
+            throw new Error(`유니코드 인덱서 파일 파싱 실패: ${error.message}. 응답 내용: ${text.substring(0, 200)}...`);
+        }
     }
 
     // ONNX 모델 로드

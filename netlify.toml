@@ -16,6 +16,18 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
+# Memory Function 리디렉션
+[[redirects]]
+  from = "/memory/*"
+  to = "/.netlify/functions/memory/:splat"
+  status = 200
+
+# Memory Function 기본 경로
+[[redirects]]
+  from = "/memory"
+  to = "/.netlify/functions/memory"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
