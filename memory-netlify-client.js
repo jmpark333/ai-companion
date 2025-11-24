@@ -85,8 +85,15 @@ class NetlifyMemoryClient {
     // Netlify Function 호출 헬퍼
     async callFunction(functionName, params = {}, options = {}) {
         try {
+            // baseURL이 올바르게 설정되었는지 확인
+            if (!this.baseURL) {
+                console.error('❌ baseURL이 설정되지 않았습니다.');
+                throw new Error('baseURL이 설정되지 않았습니다.');
+            }
+            
             // functionName이 없으면 기본 URL 사용
-            const url = functionName ? `${this.baseUrl}/${functionName}` : this.baseUrl;
+            const url = functionName ? `${this.baseURL}/${functionName}` : this.baseURL;
+            console.log(`🔗 Netlify Function 호출 URL: ${url}`);
             
             const response = await fetch(url, {
                 method: 'POST',
