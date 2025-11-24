@@ -272,6 +272,92 @@ class SupertonicTTS {
         return audioBuffer;
     }
 
+    // 텍스트를 음성으로 변환하고 재생
+    async speak(text, options = {}) {
+        try {
+            // 모델이 로드되지 않았으면 초기화
+            if (!this.modelLoaded) {
+                console.log('TTS 모델이 초기화되지 않았습니다. 초기화 중...');
+                await this.initialize();
+            }
+
+            if (!this.textToSpeech) {
+                throw new Error('TTS 엔진이 초기화되지 않았습니다.');
+            }
+
+            console.log('TTS 변환 시작:', text.substring(0, 50) + '...');
+
+            // 기본 옵션 설정
+            const defaultOptions = {
+                totalStep: this.config.totalSteps,
+                speed: this.config.speed,
+                silenceDuration: 0.3,
+                progressCallback: null
+            };
+
+            const mergedOptions = { ...defaultOptions, ...options };
+
+            // 텍스트를 음성으로 변환
+            const result = await this.textToSpeech.call(
+                text,
+                this.currentStyle || { dp: [], ttl: [] },
+                mergedOptions.totalStep,
+                mergedOptions.speed,
+                mergedOptions.silenceDuration,
+                mergedOptions.progressCallback
+            );
+
+            console.log('TTS 변환 완료:', result);
+
+            // 오디오 재생
+            if (result.wav && result.wav.length > 0) {
+                await this.playAudio(result.wav);
+                console.log('TTS 음성 재생 완료');
+            } else {
+                throw new Error('음성 데이터가 생성되지 않았습니다.');
+            }
+
+            return true;
+        } catch (error) {
+            console.error('TTS 변환 및 재생 실패:', error);
+            throw new Error(`TTS 재생 실패: ${error.message}`);
+        }
+    }
+
+    // 오디오 재생
+    async playAudio(audioData) {
+        try {
+            // AudioBuffer 생성
+            const audioBuffer = this.convertToAudioBuffer(audioData);
+
+            // 오디오 재생
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+
+            // 오디오 소스 생성 및 재생
+            const source = this.audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(this.audioContext.destination);
+            source.start();
+
+            // 재생 완료를 기다림
+            return new Promise((resolve, reject) => {
+                source.onended = () => {
+                    console.log('오디오 재생 완료');
+                    resolve();
+                };
+                source.onerror = (error) => {
+                    console.error('오디오 재생 오류:', error);
+                    reject(error);
+                };
+            });
+        } catch (error) {
+            console.error('오디오 재생 실패:', error);
+            throw new Error(`오디오 재생 실패: ${error.message}`);
+        }
+    }
+
     // AudioBuffer를 WAV Blob으로 변환
     audioBufferToWav(audioData) {
         const sampleRate = 44100;
