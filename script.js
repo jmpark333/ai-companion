@@ -440,6 +440,14 @@ class AICompanion {
 
         // Z.AI API 클라이언트 초기화
         this.apiClient = new ZAIAPIClient();
+        
+        // Supertonic TTS 초기화
+        this.ttsEngine = new SupertonicTTS();
+        this.ttsEnabled = true; // TTS 기능 활성화 상태
+        
+        // Netlify 환경 감지
+        this.isNetlify = window.location.hostname.includes('netlify.app') ||
+                         window.location.hostname.includes('netlify.com');
 
         this.initializeElements();
         this.bindEvents();
@@ -1020,8 +1028,21 @@ class AICompanion {
 
         // AI 메시지는 세로 구조 (말풍선 + 시간)
         if (sender === "ai") {
+            // AI 메시지에 음성 아이콘 추가
+            const voiceIcon = document.createElement("button");
+            voiceIcon.className = "voice-icon";
+            voiceIcon.innerHTML = "🔊";
+            voiceIcon.title = "음성으로 듣기";
+            voiceIcon.setAttribute("aria-label", "음성으로 듣기");
+            
+            // 음성 아이콘 클릭 이벤트
+            voiceIcon.addEventListener("click", async () => {
+                await this.playMessageAudio(text, voiceIcon);
+            });
+            
             messageDiv.appendChild(content);
             messageDiv.appendChild(time);
+            messageDiv.appendChild(voiceIcon);
         } else {
             // 사용자 메시지는 기존 구조 (아바타 + 말풍선)
             const avatar = document.createElement("div");
@@ -3057,6 +3078,72 @@ ${personalContext}
         `;
 
         this.addMessage(communicationContent, "ai");
+    }
+
+    // 메시지를 음성으로 재생하는 기능
+    async playMessageAudio(text, voiceIcon) {
+        if (!this.ttsEnabled) {
+            this.showNotification("TTS 기능이 비활성화되어 있습니다.");
+            return;
+        }
+
+        try {
+            // 음성 아이콘을 로딩 상태로 변경
+            voiceIcon.innerHTML = "⏳";
+            voiceIcon.disabled = true;
+            voiceIcon.title = "음성 생성 중...";
+
+            // TTS 엔진이 초기화되지 않았으면 초기화
+            if (!this.ttsEngine.modelLoaded) {
+                voiceIcon.title = "모델 로딩 중...";
+                await this.ttsEngine.initialize();
+            }
+
+            // 텍스트를 음성으로 변환하여 재생
+            voiceIcon.title = "음성 생성 중...";
+            await this.ttsEngine.speak(text);
+
+            // 성공적으로 재생 완료 후 아이콘 복원
+            voiceIcon.innerHTML = "🔊";
+            voiceIcon.disabled = false;
+            voiceIcon.title = "음성으로 듣기";
+
+        } catch (error) {
+            console.error("TTS 재생 오류:", error);
+            
+            // Netlify 환경에서의 특별 오류 처리
+            let errorMessage = "음성 재생 중 오류가 발생했습니다: " + error.message;
+            
+            if (this.isNetlify) {
+                if (error.message.includes('fetch')) {
+                    errorMessage = "모델 파일을 다운로드하는 중 오류가 발생했습니다. 네트워크 연결을 확인해주세요.";
+                } else if (error.message.includes('ONNX')) {
+                    errorMessage = "음성 모델을 초기화하는 중 오류가 발생했습니다. 페이지를 새로고침 후 다시 시도해주세요.";
+                } else if (error.message.includes('AudioContext')) {
+                    errorMessage = "오디오를 재생할 수 없습니다. 브라우저의 오디오 권한을 확인해주세요.";
+                }
+            }
+            
+            // 오류 발생 시 아이콘 복원 및 오류 표시
+            voiceIcon.innerHTML = "❌";
+            voiceIcon.disabled = false;
+            voiceIcon.title = "음성 재생 실패";
+            
+            // 3초 후 원래 아이콘으로 복원
+            setTimeout(() => {
+                voiceIcon.innerHTML = "🔊";
+                voiceIcon.title = "음성으로 듣기";
+            }, 3000);
+
+            this.showNotification(errorMessage);
+        }
+    }
+
+    // TTS 기능 활성화/비활성화
+    toggleTTS() {
+        this.ttsEnabled = !this.ttsEnabled;
+        const status = this.ttsEnabled ? "활성화" : "비활성화";
+        this.showNotification(`TTS 기능이 ${status}되었습니다.`);
     }
 }
 
