@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS Configuration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>TTS Configuration Test</h1>
+    <p>이 페이지는 TTS 모델 파일들이 올바르게 로드되는지 테스트합니다.</p>
+
+    <div id="test-results"></div>
+
+    <script>
+        async function testFileAccess(url, filename) {
+            const testItem = document.createElement('div');
+            testItem.className = 'test-item loading';
+            testItem.innerHTML = `<strong>${filename}</strong>: 테스트 중...`;
+
+            document.getElementById('test-results').appendChild(testItem);
+
+            try {
+                const response = await fetch(url);
+                const contentType = response.headers.get('content-type');
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                if (contentType && contentType.includes('text/html')) {
+                    const text = await response.text();
+                    if (text.includes('<!doctype') || text.includes('<html')) {
+                        throw new Error('HTML 응답 수신 (파일을 찾을 수 없음)');
+                    }
+                }
+
+                // 파일 내용의 일부를 확인
+                const text = await response.text();
+                const preview = text.substring(0, 200) + (text.length > 200 ? '...' : '');
+
+                testItem.className = 'test-item success';
+                testItem.innerHTML = `
+                    <strong>${filename}</strong>: ✅ 성공<br>
+                    <small>Content-Type: ${contentType}</small><br>
+                    <small>상태: ${response.status}</small><br>
+                    <details>
+                        <summary>내용 미리보기</summary>
+                        <pre>${preview}</pre>
+                    </details>
+                `;
+
+                return true;
+
+            } catch (error) {
+                testItem.className = 'test-item error';
+                testItem.innerHTML = `
+                    <strong>${filename}</strong>: ❌ 실패<br>
+                    <small>오류: ${error.message}</small><br>
+                    <small>URL: ${url}</small>
+                `;
+
+                return false;
+            }
+        }
+
+        async function runTests() {
+            document.getElementById('test-results').innerHTML = '';
+
+            const baseUrl = '/models/tts';
+            const files = [
+                'tts.json',
+                'unicode_indexer.json'
+            ];
+
+            let allPassed = true;
+
+            for (const file of files) {
+                const url = `${baseUrl}/${file}`;
+                const success = await testFileAccess(url, file);
+                if (!success) allPassed = false;
+            }
+
+            // 결과 요약
+            const summary = document.createElement('div');
+            summary.className = `test-item ${allPassed ? 'success' : 'error'}`;
+            summary.innerHTML = `<strong>테스트 결과</strong>: ${allPassed ? '✅ 모든 테스트 통과' : '❌ 일부 테스트 실패'}`;
+            document.getElementById('test-results').appendChild(summary);
+        }
+
+        // 페이지 로드 시 테스트 실행
+        runTests();
+    </script>
+</body>
+</html>

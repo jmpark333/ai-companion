@@ -166,7 +166,11 @@ class SupertonicTTS {
         console.log(`📋 응답 상태: ${response.status}, Content-Type: ${contentType}`);
         if (contentType && contentType.includes('text/html')) {
             console.error(`❌ HTML 응답 받음. 서버에서 파일을 찾을 수 없습니다.`);
-            throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 경로: ${onnxDir}/tts.json`);
+            // 더 상세한 디버깅 정보 제공
+            console.error(`🌐 현재 URL: ${window.location.href}`);
+            console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
+            console.error(`🔗 전체 URL: ${window.location.origin}${onnxDir}/tts.json`);
+            throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 경로: ${onnxDir}/tts.json (HTML 응답 수신)`);
         }
         const text = await response.text();
         console.log(`📄 응답 내용 (처음 100자): ${text.substring(0, 100)}`);
@@ -188,7 +192,9 @@ class SupertonicTTS {
         }
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('text/html')) {
-            throw new Error(`유니코드 인덱서 파일을 찾을 수 없습니다. 경로: ${onnxDir}/unicode_indexer.json`);
+            console.error(`❌ 유니코드 인덱서 HTML 응답 받음. 서버에서 파일을 찾을 수 없습니다.`);
+            console.error(`🔗 시도한 경로: ${onnxDir}/unicode_indexer.json`);
+            throw new Error(`유니코드 인덱서 파일을 찾을 수 없습니다. 경로: ${onnxDir}/unicode_indexer.json (HTML 응답 수신)`);
         }
         const text = await response.text();
         try {
