@@ -8,9 +8,12 @@ const http = require('http');
 
 // 모델 파일 URLs (Hugging Face에서 가져옴)
 const MODEL_FILES = {
-    'model.onnx': 'https://huggingface.co/Supertone/supertonic/resolve/main/model.onnx',
-    'config.json': 'https://huggingface.co/Supertone/supertonic/resolve/main/config.json',
-    'vocab.txt': 'https://huggingface.co/Supertone/supertonic/resolve/main/vocab.txt'
+    'tts.json': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/tts.json',
+    'unicode_indexer.json': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/unicode_indexer.json',
+    'duration_predictor.onnx': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/duration_predictor.onnx',
+    'text_encoder.onnx': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/text_encoder.onnx',
+    'vector_estimator.onnx': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/vector_estimator.onnx',
+    'vocoder.onnx': 'https://huggingface.co/Supertone/supertonic/resolve/main/onnx/vocoder.onnx'
 };
 
 // 다운로드 디렉토리
@@ -37,11 +40,19 @@ function downloadFile(url, filePath) {
         };
         
         protocol.get(url, requestOptions, (response) => {
-            // 리디렉션 처리 (301, 302)
+            // 리디렉션 처리 (301, 302, 307, 308)
             if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
                 console.log(`🔄 리디렉션: ${response.statusCode} -> ${response.headers.location}`);
+                
+                let newUrl = response.headers.location;
+                // 상대 경로인 경우 절대 경로로 변환
+                if (newUrl.startsWith('/')) {
+                    const originalUrl = new URL(url);
+                    newUrl = `${originalUrl.protocol}//${originalUrl.host}${newUrl}`;
+                }
+                
                 // 재귀적으로 리디렉션된 URL로 다운로드
-                downloadFile(response.headers.location, filePath)
+                downloadFile(newUrl, filePath)
                     .then(resolve)
                     .catch(reject);
                 return;

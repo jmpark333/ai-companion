@@ -1028,7 +1028,7 @@ class AICompanion {
 
         // AI 메시지는 세로 구조 (말풍선 + 시간)
         if (sender === "ai") {
-            // AI 메시지에 음성 아이콘 추가
+            // AI 메시지에 음성 아이콘 추가 (말풍선 내부로 이동)
             const voiceIcon = document.createElement("button");
             voiceIcon.className = "voice-icon";
             voiceIcon.innerHTML = "🔊";
@@ -1036,13 +1036,14 @@ class AICompanion {
             voiceIcon.setAttribute("aria-label", "음성으로 듣기");
             
             // 음성 아이콘 클릭 이벤트
-            voiceIcon.addEventListener("click", async () => {
+            voiceIcon.addEventListener("click", async (e) => {
+                e.stopPropagation(); // 버블 클릭 이벤트 전파 방지
                 await this.playMessageAudio(text, voiceIcon);
             });
             
+            content.appendChild(voiceIcon); // 말풍선 안에 추가
             messageDiv.appendChild(content);
             messageDiv.appendChild(time);
-            messageDiv.appendChild(voiceIcon);
         } else {
             // 사용자 메시지는 기존 구조 (아바타 + 말풍선)
             const avatar = document.createElement("div");
