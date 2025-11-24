@@ -166,7 +166,7 @@ class SupertonicTTS {
         console.log(`📋 상대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
 
         // 상대 경로가 실패하면 절대 경로 시도
-        if (!response.ok || await this.isHtmlResponse(response)) {
+        if (!response.ok) {
             console.log(`🔄 상대 경로 실패, 절대 경로 시도: ${fullUrl}`);
             response = await fetch(fullUrl);
             console.log(`📋 절대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
@@ -180,18 +180,24 @@ class SupertonicTTS {
         const contentType = response.headers.get('content-type');
         console.log(`📋 Content-Type: ${contentType}`);
 
-        // HTML 응답 감지 - 더 강력한 검사
-        if (await this.isHtmlResponse(response)) {
+        // 응답 텍스트 읽기 (한 번만 읽어야 함)
+        const text = await response.text();
+        console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
+
+        // HTML 응답 감지 - 읽은 텍스트로 검사
+        const isHtmlContent = text.trim().toLowerCase().startsWith('<!doctype') ||
+                             text.trim().toLowerCase().startsWith('<html') ||
+                             (contentType && contentType.includes('text/html'));
+
+        if (isHtmlContent) {
             console.error(`❌ HTML 응답 수신! 서버에서 JSON 파일을 찾을 수 없습니다.`);
             console.error(`🌐 현재 페이지 URL: ${window.location.href}`);
             console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
             console.error(`🔗 전체 URL: ${fullUrl}`);
             console.error(`📋 Content-Type: ${contentType}`);
+            console.error(`📄 응답 내용 (300자): ${text.substring(0, 300)}...`);
             throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 서버가 HTML을 반환했습니다. URL: ${fullUrl}`);
         }
-
-        const text = await response.text();
-        console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
 
         try {
             const cfgs = JSON.parse(text);
@@ -204,15 +210,7 @@ class SupertonicTTS {
         }
     }
 
-    // HTML 응답인지 확인하는 헬퍼 함수
-    async isHtmlResponse(response) {
-        const contentType = response.headers.get('content-type');
-        const text = await response.clone().text();
-        return text.trim().toLowerCase().startsWith('<!doctype') ||
-               text.trim().toLowerCase().startsWith('<html') ||
-               (contentType && contentType.includes('text/html'));
-    }
-
+    
     // 텍스트 프로세서 로드
     async loadTextProcessor(onnxDir) {
         const response = await fetch(`${onnxDir}/unicode_indexer.json`);
