@@ -3,7 +3,7 @@
 
 class NetlifyMemoryClient {
     constructor() {
-        this.baseURL = '/.netlify/functions/memory';
+        this.baseURL = '/memory';
         this.userId = this.generateUserId();
         this.requestTimeout = 10000; // 10초
     }
