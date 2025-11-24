@@ -26,12 +26,10 @@ class SupertonicTTS {
         };
         
         // 모델 URL 설정
-        // 로컬 환경에서는 models/tts 사용, Netlify 등 배포 환경에서는 HF Hub 사용
-        this.baseUrl = this.isNetlify ?
-            'https://huggingface.co/Supertone/supertonic/resolve/main/onnx' :
-            'models/tts';
+        // 빌드 시 다운로드된 models/tts를 기본으로 사용 (Netlify/로컬 모두 동일)
+        this.baseUrl = 'models/tts';
             
-        console.log(`🔊 Supertonic TTS 설정: ${this.isNetlify ? '원격(HF)' : '로컬'} 모드`);
+        console.log(`🔊 Supertonic TTS 설정: 기본 모드`);
         console.log(`📂 모델 경로: ${this.baseUrl}`);
     }
 

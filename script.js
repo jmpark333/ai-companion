@@ -2574,34 +2574,109 @@ ${personalContext}
     }
 
     // 대화 기록 로드
+    // 대화 기록 로드
     loadChatHistory() {
-        try {
-            const savedHistory = localStorage.getItem(
-                "ai_companion_chat_history",
-            );
-            if (savedHistory) {
-                const parsedHistory = JSON.parse(savedHistory);
+        const savedHistory = localStorage.getItem("chatHistory");
+        if (savedHistory) {
+            try {
+                const history = JSON.parse(savedHistory);
+                // 이전 형식 호환성 처리
+                const processedHistory = Array.isArray(history) ? history : (history.messages || []);
+                
+                // 메시지 배열 복원
+                this.messages = processedHistory;
 
-                // 타임스탬프 문자열을 Date 객체로 변환
-                this.messages = parsedHistory.map((msg) => ({
-                    ...msg,
-                    timestamp: new Date(msg.timestamp),
-                }));
-
-                // 저장된 메시지를 화면에 표시
+                // UI에 메시지 표시
                 this.messages.forEach((msg) => {
-                    this.displayMessage(msg.text, msg.sender, msg.timestamp);
+                    this.renderMessage(msg);
                 });
 
-                // 대화 기록 로드 확인을 위한 콘솔 로그
-                console.log(
-                    `대화 기록 로드 완료: ${this.messages.length}개 메시지`,
-                );
+                // 마지막 대화 시간 확인
+                if (this.messages.length > 0) {
+                    const lastMessage = this.messages[this.messages.length - 1];
+                    const lastTime = new Date(lastMessage.timestamp).getTime();
+                    const now = new Date().getTime();
+                    
+                    // 24시간 이상 지났으면 환영 인사 추가
+                    if (now - lastTime > 24 * 60 * 60 * 1000) {
+                        this.addMessage(
+                            "오랜만이네요! 그동안 별일 없으셨나요? 😊",
+                            "ai"
+                        );
+                    }
+                }
+            } catch (e) {
+                console.error("대화 기록 로드 오류:", e);
+                localStorage.removeItem("chatHistory");
             }
-        } catch (error) {
-            console.error("대화 기록 로드 오류:", error);
-            this.messages = [];
+        } else {
+            // 첫 방문 환영 메시지
+            this.addMessage(
+                "안녕하세요! 저는 당신의 AI 친구입니다.\n오늘 하루는 어떠셨나요? 저에게 편하게 이야기해주세요. 🤗",
+                "ai"
+            );
         }
+    }
+
+    // 메시지 렌더링 (addMessage와 분리하여 기록 로드 시 사용)
+    renderMessage(msg) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${msg.sender}-message`;
+
+        const content = document.createElement("div");
+        content.className = "message-content";
+
+        // 텍스트 처리 (마크다운 등)
+        const text = msg.text;
+        const paragraphs = text.split("\n").filter((p) => p.trim());
+        paragraphs.forEach((paragraph) => {
+            const p = document.createElement("p");
+            p.textContent = paragraph;
+            content.appendChild(p);
+        });
+
+        const time = document.createElement("div");
+        time.className = "message-time";
+        time.textContent = this.formatTime(new Date(msg.timestamp));
+
+        // AI 메시지는 세로 구조 (말풍선 + 시간)
+        if (msg.sender === "ai") {
+            // AI 메시지에 음성 아이콘 추가 (말풍선 내부로 이동)
+            const voiceIcon = document.createElement("button");
+            voiceIcon.className = "voice-icon";
+            voiceIcon.innerHTML = "🔊";
+            voiceIcon.title = "음성으로 듣기";
+            voiceIcon.setAttribute("aria-label", "음성으로 듣기");
+            
+            // 음성 아이콘 클릭 이벤트
+            voiceIcon.addEventListener("click", async (e) => {
+                e.stopPropagation(); // 버블 클릭 이벤트 전파 방지
+                await this.playMessageAudio(text, voiceIcon);
+            });
+            
+            content.appendChild(voiceIcon); // 말풍선 안에 추가
+            messageDiv.appendChild(content);
+            messageDiv.appendChild(time);
+        } else {
+            // 사용자 메시지는 기존 구조 (아바타 + 말풍선)
+            const avatar = document.createElement("div");
+            avatar.className = "message-avatar";
+            avatar.textContent = "😊";
+
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            messageDiv.appendChild(time);
+        }
+
+        this.chatMessages.appendChild(messageDiv);
+        this.scrollToBottom();
+    }
+    
+    formatTime(date) {
+        return date.toLocaleTimeString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
     }
 
     // 메시지를 화면에 표시하는 함수 (addMessage와 분리)

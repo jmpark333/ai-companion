@@ -2,6 +2,9 @@
   "name": "ai-companion",
   "version": "1.0.0",
   "description": "AI Companion with Memory",
+  "scripts": {
+    "build": "node download-tts-models.js"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "body-parser": "^2.2.0",
