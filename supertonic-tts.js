@@ -59,14 +59,14 @@ class SupertonicTTS {
             // 모델 로드
             console.log('📥 모델 파일 다운로드 중...');
             
-            const result = await this.loadTextToSpeech(this.baseUrl, {
+            const result = await this.loadModels(this.baseUrl, {
                 executionProviders: ['webgpu', 'wasm'],
                 graphOptimizationLevel: 'all'
             }, (modelName, current, total) => {
                 console.log(`🔄 모델 로딩 중 (${current}/${total}): ${modelName}`);
             });
             
-            this.textToSpeech = result.textToSpeech;
+            this.textToSpeech = new TextToSpeech(result.cfgs, result.textProcessor, result.dpOrt, result.textEncOrt, result.vectorEstOrt, result.vocoderOrt);
             this.cfgs = result.cfgs;
             
             // 기본 음성 스타일 로드
@@ -102,6 +102,53 @@ class SupertonicTTS {
             return await response.json();
         } catch (error) {
             console.error('음성 스타일 로드 실패:', error);
+            throw error;
+        }
+    }
+
+    // 모델 로드 헬퍼 메서드
+    async loadModels(onnxDir, options, progressCallback) {
+        try {
+            // 설정 파일 로드
+            console.log('📥 설정 파일 다운로드 중...');
+            const cfgs = await this.loadCfgs(onnxDir);
+            
+            // 텍스트 프로세서 로드
+            console.log('📝 텍스트 프로세서 로드 중...');
+            const textProcessor = await this.loadTextProcessor(onnxDir);
+            
+            // 모델 파일들 로드
+            const models = [
+                { name: 'duration_predictor.onnx', path: `${onnxDir}/duration_predictor.onnx` },
+                { name: 'text_encoder.onnx', path: `${onnxDir}/text_encoder.onnx` },
+                { name: 'vector_estimator.onnx', path: `${onnxDir}/vector_estimator.onnx` },
+                { name: 'vocoder.onnx', path: `${onnxDir}/vocoder.onnx` }
+            ];
+            
+            const loadedModels = {};
+            let current = 0;
+            
+            for (const model of models) {
+                if (progressCallback) {
+                    progressCallback(current + 1, models.length, model.name);
+                }
+                
+                console.log(`🔄 모델 로딩 중 (${current + 1}/${models.length}): ${model.name}`);
+                loadedModels[model.name.replace('.onnx', '')] = await this.loadOnnx(model.path, options);
+                current++;
+            }
+            
+            return {
+                cfgs,
+                textProcessor: new UnicodeProcessor(textProcessor),
+                dpOrt: loadedModels.duration_predictor,
+                textEncOrt: loadedModels.text_encoder,
+                vectorEstOrt: loadedModels.vector_estimator,
+                vocoderOrt: loadedModels.vocoder
+            };
+            
+        } catch (error) {
+            console.error('모델 로드 중 오류:', error);
             throw error;
         }
     }
