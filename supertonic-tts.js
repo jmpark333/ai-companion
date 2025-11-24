@@ -458,7 +458,7 @@ class SupertonicTTS {
             
             // 기본 음성 스타일 로드 (공식 예제 기반)
             try {
-                const stylePath = `/assets/tts/voice_styles/${this.config.voiceStyle}.json`;
+                const stylePath = `/assets/voice_styles/${this.config.voiceStyle}.json`;
                 this.currentStyle = await loadVoiceStyle([stylePath], true);
                 console.log('✅ 음성 스타일 로드 성공:', this.config.voiceStyle);
             } catch (styleError) {
@@ -484,7 +484,7 @@ class SupertonicTTS {
     async createDefaultStyle() {
         try {
             // 기본 F1 스타일 파일 경로
-            const stylePath = '/assets/tts/voice_styles/F1.json';
+            const stylePath = '/assets/voice_styles/F1.json';
             const style = await loadVoiceStyle([stylePath]);
             return style;
         } catch (error) {
