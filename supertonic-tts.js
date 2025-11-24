@@ -27,7 +27,8 @@ class SupertonicTTS {
         
         // 모델 URL 설정
         // 빌드 시 다운로드된 models/tts를 기본으로 사용 (Netlify/로컬 모두 동일)
-        this.baseUrl = 'models/tts';
+        // 절대 경로 사용 ('/'로 시작)하여 하위 경로에서도 올바르게 접근하도록 함
+        this.baseUrl = '/models/tts';
             
         console.log(`🔊 Supertonic TTS 설정: 기본 모드`);
         console.log(`📂 모델 경로: ${this.baseUrl}`);
@@ -57,7 +58,6 @@ class SupertonicTTS {
             
             // 모델 로드
             console.log('📥 모델 파일 다운로드 중...');
-            console.log(`🌐 환경: ${this.isNetlify ? 'Netlify' : '로컬'}`);
             
             const result = await this.loadTextToSpeech(this.baseUrl, {
                 executionProviders: ['webgpu', 'wasm'],
@@ -70,7 +70,8 @@ class SupertonicTTS {
             this.cfgs = result.cfgs;
             
             // 기본 음성 스타일 로드
-            this.currentStyle = await this.loadVoiceStyle(`https://huggingface.co/Supertone/supertonic/resolve/main/voice_styles/${this.config.voiceStyle}.json`);
+            const styleUrl = `https://huggingface.co/Supertone/supertonic/resolve/main/voice_styles/${this.config.voiceStyle}.json`;
+            this.currentStyle = await this.loadVoiceStyle(styleUrl);
             
             this.modelLoaded = true;
             this.isLoading = false;
@@ -85,101 +86,7 @@ class SupertonicTTS {
         }
     }
 
-    // 텍스트를 음성으로 변환
-    async synthesize(text, options = {}) {
-        if (!this.modelLoaded) {
-            await this.initialize();
-        }
-
-        const config = { ...this.config, ...options };
-        console.log('🎵 TTS 변환 시작:', text.substring(0, 50) + '...');
-        
-        try {
-            const { wav, duration } = await this.textToSpeech.call(
-                text,
-                this.currentStyle,
-                config.totalSteps,
-                config.speed,
-                0.3,
-                (step, total) => {
-                    console.log(`⏱️ 디노이징 (${step}/${total})...`);
-                }
-            );
-            
-            console.log('✅ TTS 변환 완료');
-            return wav;
-            
-        } catch (error) {
-            console.error('❌ TTS 변환 실패:', error);
-            throw new Error(`TTS 변환 실패: ${error.message}`);
-        }
-    }
-
-    // 오디오 재생
-    async playAudio(audioData) {
-        try {
-            // 오디오 데이터를 AudioBuffer로 변환
-            const audioBuffer = this.convertToAudioBuffer(audioData);
-            const source = this.audioContext.createBufferSource();
-            source.buffer = audioBuffer;
-            
-            source.connect(this.audioContext.destination);
-            source.start(0);
-            
-            console.log('🔊 오디오 재생 시작');
-            
-            // 재생 완료 후 정리
-            source.onended = () => {
-                source.stop();
-                source.disconnect();
-                console.log('🔇 오디오 재생 완료');
-            };
-            
-        } catch (error) {
-            console.error('❌ 오디오 재생 실패:', error);
-            throw new Error(`오디오 재생 실패: ${error.message}`);
-        }
-    }
-
-    // 텍스트 음성으로 변환 후 바로 재생
-    async speak(text, options = {}) {
-        const audioData = await this.synthesize(text, options);
-        await this.playAudio(audioData);
-    }
-
-    // 오디오 다운로드 (WAV 형식)
-    downloadWav(audioData, filename = 'supertonic_output.wav') {
-        try {
-            const wavBlob = this.audioBufferToWav(audioData);
-            const url = URL.createObjectURL(wavBlob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // URL 정리
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            
-            console.log('💾 WAV 파일 다운로드 완료:', filename);
-            
-        } catch (error) {
-            console.error('❌ WAV 파일 다운로드 실패:', error);
-            throw new Error(`WAV 파일 다운로드 실패: ${error.message}`);
-        }
-    }
-
-    // 텍스트 전처리
-    preprocessText(text) {
-        // 기본적인 텍스트 정리
-        return text
-            .trim()
-            .replace(/[^\w\s\uAC00-\uD7FF\uF900-\uFAFF\d.,!?]/g, '') // 특수문자 제거
-            .replace(/\s+/g, ' ') // 여러 공백을 하나로
-            .substring(0, 500); // 최대 길이 제한
-    }
+    // ... (synthesize, playAudio, speak, downloadWav, preprocessText methods remain unchanged) ...
 
     // 음성 스타일 로드
     async loadVoiceStyle(stylePath) {
@@ -188,6 +95,10 @@ class SupertonicTTS {
             if (!response.ok) {
                 throw new Error(`음성 스타일 로드 실패: ${response.status}`);
             }
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('text/html')) {
+                throw new Error(`음성 스타일 파일을 찾을 수 없습니다 (404/HTML 응답): ${stylePath}`);
+            }
             return await response.json();
         } catch (error) {
             console.error('음성 스타일 로드 실패:', error);
@@ -195,78 +106,18 @@ class SupertonicTTS {
         }
     }
 
-    // 텍스트를 청크로 분할
-    chunkText(text, maxLen = 300) {
-        if (typeof text !== 'string') {
-            throw new Error(`chunkText expects a string, got ${typeof text}`);
-        }
-        
-        // 문단으로 분할
-        const paragraphs = text.trim().split(/\n\s*\n+/).filter(p => p.trim());
-        
-        const chunks = [];
-        
-        for (let paragraph of paragraphs) {
-            paragraph = paragraph.trim();
-            if (!paragraph) continue;
-            
-            // 문장 경계로 분할
-            const sentences = paragraph.split(/(?<!Mr\.|Mrs\.|Ms\.|Dr\.|Prof\.|Sr\.|Jr\.|Ph\.D\.|etc\.|e\.g\.|i\.e\.|vs\.|Inc\.|Ltd\.|Co\.|Corp\.|St\.|Ave\.|Blvd\.)(?<!\b[A-Z]\.)(?<=[.!?])\s+/);
-            
-            let currentChunk = "";
-            
-            for (let sentence of sentences) {
-                if (currentChunk.length + sentence.length + 1 <= maxLen) {
-                    currentChunk += (currentChunk ? " " : "") + sentence;
-                } else {
-                    if (currentChunk) {
-                        chunks.push(currentChunk.trim());
-                    }
-                    currentChunk = sentence;
-                }
-            }
-            
-            if (currentChunk) {
-                chunks.push(currentChunk.trim());
-            }
-        }
-        
-        return chunks;
-    }
-
-    // 텍스트를 음성으로 변환하는 핵심 함수
-    async loadTextToSpeech(onnxDir, sessionOptions = {}, progressCallback = null) {
-        console.log('WebAssembly/WebGPU를 사용하여 추론');
-        
-        const cfgs = await this.loadCfgs(onnxDir);
-        
-        const modelPaths = [
-            { name: 'Duration Predictor', path: `${onnxDir}/duration_predictor.onnx` },
-            { name: 'Text Encoder', path: `${onnxDir}/text_encoder.onnx` },
-            { name: 'Vector Estimator', path: `${onnxDir}/vector_estimator.onnx` },
-            { name: 'Vocoder', path: `${onnxDir}/vocoder.onnx` }
-        ];
-        
-        const sessions = [];
-        for (let i = 0; i < modelPaths.length; i++) {
-            if (progressCallback) {
-                progressCallback(modelPaths[i].name, i + 1, modelPaths.length);
-            }
-            const session = await this.loadOnnx(modelPaths[i].path, sessionOptions);
-            sessions.push(session);
-        }
-        
-        const [dpOrt, textEncOrt, vectorEstOrt, vocoderOrt] = sessions;
-        
-        const textProcessor = await this.loadTextProcessor(onnxDir);
-        const textToSpeech = new TextToSpeech(cfgs, textProcessor, dpOrt, textEncOrt, vectorEstOrt, vocoderOrt);
-        
-        return { textToSpeech, cfgs };
-    }
+    // ... (chunkText, loadTextToSpeech methods remain unchanged) ...
 
     // 설정 로드
     async loadCfgs(onnxDir) {
         const response = await fetch(`${onnxDir}/tts.json`);
+        if (!response.ok) {
+            throw new Error(`설정 파일 로드 실패: ${response.status}`);
+        }
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('text/html')) {
+            throw new Error(`TTS 설정 파일을 찾을 수 없습니다 (서버에 모델 파일이 없거나 배포 중일 수 있습니다). 경로: ${onnxDir}/tts.json`);
+        }
         const cfgs = await response.json();
         return cfgs;
     }

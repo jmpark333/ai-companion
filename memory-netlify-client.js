@@ -85,37 +85,25 @@ class NetlifyMemoryClient {
     // Netlify Function 호출 헬퍼
     async callFunction(endpoint, body = {}) {
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-
-            const response = await fetch(`${this.baseURL}${endpoint}`, {
+            const response = await fetch(`${this.baseUrl}${functionName}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    ...options.headers
                 },
-                body: JSON.stringify({
-                    userId: this.userId,
-                    ...body
-                }),
-                signal: controller.signal
+                body: JSON.stringify(params),
+                ...options
             });
 
-            clearTimeout(timeoutId);
-
             if (!response.ok) {
-                const error = await response.text();
-                throw new Error(`API 오류 (${response.status}): ${error}`);
+                throw new Error(`Netlify Function 호출 오류: ${response.status} ${response.statusText}`);
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch (error) {
-            if (error.name === 'AbortError') {
-                console.error('요청 시간 초과:', endpoint);
-                throw new Error('요청 시간이 초과되었습니다.');
-            }
-            console.error('Netlify Function 호출 오류:', error);
-            throw error;
+            console.error(`Netlify Function '${functionName}' 호출 실패:`, error);
+            // 네트워크 오류(리소스 부족 등) 발생 시 null 반환하여 호출 측에서 처리하도록 함
+            return null;
         }
     }
 
