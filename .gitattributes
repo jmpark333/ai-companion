@@ -1,3 +1,4 @@
 models/tts/*.onnx filter=lfs diff=lfs merge=lfs -text
 models/tts/*.json filter=lfs diff=lfs merge=lfs -text
 assets/tts/*.onnx filter=lfs diff=lfs merge=lfs -text
+assets/tts/*.json filter=lfs diff=lfs merge=lfs -text
