@@ -1,0 +1,14 @@
+# Netlify redirects file
+# 각 라인은: from to [status]
+
+# API 및 Functions 리디렉션
+/api/* /.netlify/functions/:splat 200
+/memory /.netlify/functions/memory 200
+/memory/* /.netlify/functions/memory/:splat 200
+
+# 정적 파일 리디렉션 (SPA 처리에서 제외)
+/models/* /models/:splat 200
+/js/* /js/:splat 200
+
+# 모든 나머지 요청을 index.html로 리디렉션 (SPA)
+/* /index.html 200

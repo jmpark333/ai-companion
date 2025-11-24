@@ -16,76 +16,7 @@
   to = "/.netlify/functions/:splat"
   status = 200
 
-# Memory Function 리디렉션
-[[redirects]]
-  from = "/memory/*"
-  to = "/.netlify/functions/memory/:splat"
-  status = 200
-
-# Memory Function 기본 경로
-[[redirects]]
-  from = "/memory"
-  to = "/.netlify/functions/memory"
-  status = 200
-
-# API 및 Netlify Functions 요청은 SPA 리디렉션에서 제외
-[[redirects]]
-  from = "/api/*"
-  to = "/api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/.netlify/*"
-  to = "/.netlify/:splat"
-  status = 200
-
-# 정적 파일들 명시적으로 처리 (리디렉션 방지)
-[[redirects]]
-  from = "/models/*"
-  to = "/models/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.js"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.css"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.json"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.onnx"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.png"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.jpg"
-  to = "/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/*.ico"
-  to = "/:splat"
-  status = 200
-
-# SPA fallback - 위에서 처리하지 않은 요청만 index.html로 리디렉션
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
+# 리디렉션 규칙은 _redirects 파일에서 관리합니다
 
 [context.production]
   command = "echo 'Production deployment'"
