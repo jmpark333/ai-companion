@@ -83,7 +83,7 @@ class NetlifyMemoryClient {
     }
 
     // Netlify Function 호출 헬퍼
-    async callFunction(endpoint, body = {}) {
+    async callFunction(functionName, params = {}, options = {}) {
         try {
             const response = await fetch(`${this.baseUrl}${functionName}`, {
                 method: 'POST',
@@ -103,7 +103,7 @@ class NetlifyMemoryClient {
         } catch (error) {
             console.error(`Netlify Function '${functionName}' 호출 실패:`, error);
             // 네트워크 오류(리소스 부족 등) 발생 시 null 반환하여 호출 측에서 처리하도록 함
-            return null;
+            return { success: false, error: error.message }; // null 대신 실패 객체 반환으로 변경하여 호출 측 구조 분해 오류 방지
         }
     }
 

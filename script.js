@@ -1706,6 +1706,22 @@ class AICompanion {
                 .join("");
 
             contentElement.innerHTML = processedContent;
+            
+            // 스트리밍 완료 후 음성 아이콘 추가
+            const voiceIcon = document.createElement("button");
+            voiceIcon.className = "voice-icon";
+            voiceIcon.innerHTML = "🔊";
+            voiceIcon.title = "음성으로 듣기";
+            voiceIcon.setAttribute("aria-label", "음성으로 듣기");
+            
+            // 음성 아이콘 클릭 이벤트
+            voiceIcon.addEventListener("click", async (e) => {
+                e.stopPropagation(); // 버블 클릭 이벤트 전파 방지
+                await this.playMessageAudio(finalContent, voiceIcon);
+            });
+            
+            contentElement.appendChild(voiceIcon);
+            
             messageDiv.classList.remove("streaming-message");
         }
     }
