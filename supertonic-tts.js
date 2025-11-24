@@ -157,19 +157,25 @@ class SupertonicTTS {
 
     // 설정 로드
     async loadCfgs(onnxDir) {
+        console.log(`🔍 TTS 설정 파일 로드 시도: ${onnxDir}/tts.json`);
         const response = await fetch(`${onnxDir}/tts.json`);
         if (!response.ok) {
             throw new Error(`설정 파일 로드 실패: ${response.status}`);
         }
         const contentType = response.headers.get('content-type');
+        console.log(`📋 응답 상태: ${response.status}, Content-Type: ${contentType}`);
         if (contentType && contentType.includes('text/html')) {
-            throw new Error(`TTS 설정 파일을 찾을 수 없습니다 (서버에 모델 파일이 없거나 배포 중일 수 있습니다). 경로: ${onnxDir}/tts.json`);
+            console.error(`❌ HTML 응답 받음. 서버에서 파일을 찾을 수 없습니다.`);
+            throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 경로: ${onnxDir}/tts.json`);
         }
         const text = await response.text();
+        console.log(`📄 응답 내용 (처음 100자): ${text.substring(0, 100)}`);
         try {
             const cfgs = JSON.parse(text);
+            console.log(`✅ TTS 설정 파일 파싱 성공`);
             return cfgs;
         } catch (error) {
+            console.error(`❌ JSON 파싱 실패: ${error.message}`);
             throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답 내용: ${text.substring(0, 200)}...`);
         }
     }

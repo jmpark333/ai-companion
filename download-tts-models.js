@@ -92,16 +92,27 @@ async function downloadModels() {
     console.log('🚀 Supertonic TTS 모델 다운로드 시작...\n');
     
     try {
+        // Netlify 빌드 환경에서는 항상 모델 파일을 다운로드하도록 강제
+        const isNetlifyBuild = process.env.NETLIFY === 'true' || process.env.CI === 'true';
+        
         for (const [filename, url] of Object.entries(MODEL_FILES)) {
             const filePath = path.join(MODEL_DIR, filename);
             
-            // 파일이 이미 존재하는지 확인
-            if (fs.existsSync(filePath)) {
+            // Netlify 빌드 환경이거나 파일이 없으면 항상 다운로드
+            if (!isNetlifyBuild || !fs.existsSync(filePath)) {
+                console.log(`📥 다운로드 중: ${filename}`);
+                await downloadFile(url, filePath);
+            } else if (isNetlifyBuild) {
+                console.log(`🔄 Netlify 빌드 환경: ${filename} 강제 다운로드`);
+                // 기존 파일 삭제 후 재다운로드
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+                await downloadFile(url, filePath);
+            } else {
                 console.log(`⏭️  건너뛰기 (이미 존재): ${filename}`);
                 continue;
             }
-            
-            await downloadFile(url, filePath);
         }
         
         console.log('\n🎉 모든 모델 파일 다운로드 완료!');
