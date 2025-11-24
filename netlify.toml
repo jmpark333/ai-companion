@@ -28,12 +28,6 @@
   to = "/.netlify/functions/memory"
   status = 200
 
-# 모델 파일 접근을 위한 리디렉션 (SPA보다 우선)
-[[redirects]]
-  from = "/models/*"
-  to = "/models/:splat"
-  status = 200
-
 # API 및 Netlify Functions 요청은 SPA 리디렉션에서 제외
 [[redirects]]
   from = "/api/*"
@@ -45,7 +39,48 @@
   to = "/.netlify/:splat"
   status = 200
 
-# SPA fallback - models, api, functions 디렉토리를 제외한 모든 요청을 index.html로 리디렉션
+# 정적 파일들 명시적으로 처리 (리디렉션 방지)
+[[redirects]]
+  from = "/models/*"
+  to = "/models/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.js"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.css"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.json"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.onnx"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.png"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.jpg"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*.ico"
+  to = "/:splat"
+  status = 200
+
+# SPA fallback - 위에서 처리하지 않은 요청만 index.html로 리디렉션
 [[redirects]]
   from = "/*"
   to = "/index.html"

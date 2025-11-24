@@ -158,29 +158,47 @@ class SupertonicTTS {
     // 설정 로드
     async loadCfgs(onnxDir) {
         console.log(`🔍 TTS 설정 파일 로드 시도: ${onnxDir}/tts.json`);
+        const fullUrl = `${window.location.origin}${onnxDir}/tts.json`;
+        console.log(`🔗 전체 URL: ${fullUrl}`);
+
         const response = await fetch(`${onnxDir}/tts.json`);
+        console.log(`📋 응답 상태: ${response.status}, OK: ${response.ok}`);
+
         if (!response.ok) {
-            throw new Error(`설정 파일 로드 실패: ${response.status}`);
+            console.error(`❌ HTTP 오류: ${response.status} ${response.statusText}`);
+            throw new Error(`설정 파일 로드 실패: ${response.status} ${response.statusText}`);
         }
+
         const contentType = response.headers.get('content-type');
-        console.log(`📋 응답 상태: ${response.status}, Content-Type: ${contentType}`);
-        if (contentType && contentType.includes('text/html')) {
-            console.error(`❌ HTML 응답 받음. 서버에서 파일을 찾을 수 없습니다.`);
-            // 더 상세한 디버깅 정보 제공
-            console.error(`🌐 현재 URL: ${window.location.href}`);
-            console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
-            console.error(`🔗 전체 URL: ${window.location.origin}${onnxDir}/tts.json`);
-            throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 경로: ${onnxDir}/tts.json (HTML 응답 수신)`);
-        }
+        console.log(`📋 Content-Type: ${contentType}`);
+
+        // HTML 응답 감지 - 더 강력한 검사
         const text = await response.text();
-        console.log(`📄 응답 내용 (처음 100자): ${text.substring(0, 100)}`);
+        console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
+
+        // 응답 내용이 HTML인지 확인 (Content-Type 헤더와 실제 내용 모두 확인)
+        const isHtmlContent = text.trim().toLowerCase().startsWith('<!doctype') ||
+                             text.trim().toLowerCase().startsWith('<html') ||
+                             (contentType && contentType.includes('text/html'));
+
+        if (isHtmlContent) {
+            console.error(`❌ HTML 응답 수신! 서버에서 JSON 파일을 찾을 수 없습니다.`);
+            console.error(`🌐 현재 페이지 URL: ${window.location.href}`);
+            console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
+            console.error(`🔗 전체 URL: ${fullUrl}`);
+            console.error(`📋 Content-Type: ${contentType}`);
+            console.error(`📄 응답 내용 (300자): ${text.substring(0, 300)}...`);
+            throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 서버가 HTML을 반환했습니다. URL: ${fullUrl}`);
+        }
+
         try {
             const cfgs = JSON.parse(text);
             console.log(`✅ TTS 설정 파일 파싱 성공`);
             return cfgs;
         } catch (error) {
             console.error(`❌ JSON 파싱 실패: ${error.message}`);
-            throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답 내용: ${text.substring(0, 200)}...`);
+            console.error(`📄 응답 내용 (500자): ${text.substring(0, 500)}`);
+            throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답이 JSON이 아닙니다.`);
         }
     }
 
