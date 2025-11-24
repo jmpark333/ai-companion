@@ -2,7 +2,8 @@
 // ONNX Runtime Web을 사용한 브라우저 기반 TTS
 // Supertonic Web Example 기반 구현
 
-import * as ort from 'onnxruntime-web';
+// ONNX Runtime Web은 CDN에서 전역 변수로 로드됨
+const ort = window.ort;
 
 class SupertonicTTS {
     constructor() {
