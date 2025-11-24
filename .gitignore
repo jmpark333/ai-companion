@@ -30,8 +30,6 @@ dist/
 .netlify/
 
 # Large TTS model files - use Git LFS
-models/tts/*.onnx
-models/tts/*.json
 
 # IDE
 .vscode/
