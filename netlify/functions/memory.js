@@ -117,15 +117,18 @@ exports.handler = async (event, context) => {
 
 // 대화 저장
 async function saveConversation(body) {
-  const { userId, userMessage, aiMessage, emotion, topic, personality } = body;
+  const { userMessage, aiMessage, emotion, topic, personality } = body;
+  
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
-  if (!userId || !userMessage) {
+  if (!userMessage) {
     return {
       statusCode: 400,
       headers,
       body: JSON.stringify({
         success: false,
-        error: '필수 필드(userId, userMessage)가 누락되었습니다.'
+        error: '필수 필드(userMessage)가 누락되었습니다.'
       })
     };
   }
@@ -171,9 +174,11 @@ async function saveConversation(body) {
 
 // 대화 검색
 async function searchConversations(body) {
-  const { userId, keywords, limit = 5 } = body;
+  const { keywords, limit = 5 } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
-  if (!userId || !keywords || keywords.length === 0) {
+  if (!keywords || keywords.length === 0) {
     return {
       statusCode: 400,
       headers,
@@ -218,7 +223,9 @@ async function searchConversations(body) {
 
 // 최근 대화 가져오기
 async function getRecentConversations(body) {
-  const { userId, limit = 10 } = body;
+  const { limit = 10 } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {
@@ -261,7 +268,8 @@ async function getRecentConversations(body) {
 
 // 감정 통계
 async function getEmotionStats(body) {
-  const { userId } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {
@@ -311,7 +319,8 @@ async function getEmotionStats(body) {
 
 // 주제 통계
 async function getTopicStats(body) {
-  const { userId } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {
@@ -393,7 +402,9 @@ async function clearConversations(body) {
 
 // 요약 저장
 async function saveSummary(body) {
-  const { userId, summaryText, conversationIds = [] } = body;
+  const { summaryText, conversationIds = [] } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId || !summaryText) {
     return {
@@ -441,7 +452,9 @@ async function saveSummary(body) {
 
 // 사용자 컨텍스트 저장
 async function saveUserContext(body) {
-  const { userId, contextType, contextData } = body;
+  const { contextType, contextData } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId || !contextType || !contextData) {
     return {
@@ -489,7 +502,9 @@ async function saveUserContext(body) {
 
 // 사용자 컨텍스트 조회
 async function getUserContext(body) {
-  const { userId, contextType } = body;
+  const { contextType } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {
@@ -536,7 +551,9 @@ async function getUserContext(body) {
 
 // 사용자 컨텍스트 삭제
 async function deleteUserContext(body) {
-  const { userId, contextType } = body;
+  const { contextType } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {
@@ -584,7 +601,9 @@ async function deleteUserContext(body) {
 
 // 요약 가져오기
 async function getSummaries(body) {
-  const { userId, limit = 5 } = body;
+  const { limit = 5 } = body;
+  // NetlifyMemoryClient에서 자동으로 생성한 userId 사용
+  const userId = body.userId || 'user_default';
 
   if (!userId) {
     return {

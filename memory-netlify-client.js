@@ -85,7 +85,10 @@ class NetlifyMemoryClient {
     // Netlify Function 호출 헬퍼
     async callFunction(functionName, params = {}, options = {}) {
         try {
-            const response = await fetch(`${this.baseUrl}${functionName}`, {
+            // functionName이 없으면 기본 URL 사용
+            const url = functionName ? `${this.baseUrl}/${functionName}` : this.baseUrl;
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -130,7 +133,7 @@ class NetlifyMemoryClient {
     // 대화 저장
     async saveConversation(userMessage, aiMessage, metadata = {}) {
         try {
-            const result = await this.callFunction('/save', {
+            const result = await this.callFunction('save', {
                 userMessage,
                 aiMessage,
                 emotion: metadata.emotion || null,
@@ -154,7 +157,7 @@ class NetlifyMemoryClient {
     // 관련 대화 검색 (키워드 기반)
     async searchConversations(keywords, limit = 5) {
         try {
-            const result = await this.callFunction('/search', {
+            const result = await this.callFunction('search', {
                 keywords: Array.isArray(keywords) ? keywords : [keywords],
                 limit
             });
@@ -175,7 +178,7 @@ class NetlifyMemoryClient {
     // 최근 대화 가져오기
     async getRecentConversations(limit = 10) {
         try {
-            const result = await this.callFunction('/recent', { limit });
+            const result = await this.callFunction('recent', { limit });
 
             if (result.success) {
                 console.log(`📋 최근 대화 ${result.data.length}개 조회`);
@@ -193,7 +196,7 @@ class NetlifyMemoryClient {
     // 감정별 대화 통계
     async getEmotionStats() {
         try {
-            const result = await this.callFunction('/stats/emotion', {});
+            const result = await this.callFunction('stats/emotion', {});
 
             if (result.success) {
                 console.log('😊 감정 통계:', result.data);
@@ -211,7 +214,7 @@ class NetlifyMemoryClient {
     // 주제별 대화 통계
     async getTopicStats() {
         try {
-            const result = await this.callFunction('/stats/topic', {});
+            const result = await this.callFunction('stats/topic', {});
 
             if (result.success) {
                 console.log('📊 주제 통계:', result.data);
@@ -229,7 +232,7 @@ class NetlifyMemoryClient {
     // 전체 대화 내역 삭제
     async clearAllConversations() {
         try {
-            const result = await this.callFunction('/clear', {});
+            const result = await this.callFunction('clear', {});
 
             if (result.success) {
                 console.log('🗑️ 모든 대화가 삭제되었습니다.');
@@ -247,7 +250,7 @@ class NetlifyMemoryClient {
     // 대화 요약 저장
     async saveSummary(summaryText, conversationIds = []) {
         try {
-            const result = await this.callFunction('/summary/save', {
+            const result = await this.callFunction('summary/save', {
                 summaryText,
                 conversationIds
             });
@@ -268,7 +271,7 @@ class NetlifyMemoryClient {
     // 저장된 요약 가져오기
     async getSummaries(limit = 5) {
         try {
-            const result = await this.callFunction('/summary/get', { limit });
+            const result = await this.callFunction('summary/get', { limit });
 
             if (result.success) {
                 console.log(`📚 요약 ${result.data.length}개 조회`);
@@ -416,7 +419,7 @@ class NetlifyMemoryClient {
     async savePersonalContext(contextData, contextType = 'basic_situation') {
         try {
             console.log('💾 개인 컨텍스트 저장 중...', { contextType, data: contextData });
-            const result = await this.callFunction('/context/save', {
+            const result = await this.callFunction('context/save', {
                 contextType,
                 contextData
             });
@@ -438,7 +441,7 @@ class NetlifyMemoryClient {
     async getPersonalContext(contextType = 'basic_situation') {
         try {
             console.log('📖 개인 컨텍스트 조회 중...', { contextType });
-            const result = await this.callFunction('/context/get', {
+            const result = await this.callFunction('context/get', {
                 contextType
             });
 
@@ -459,7 +462,7 @@ class NetlifyMemoryClient {
     async deletePersonalContext(contextType = 'basic_situation') {
         try {
             console.log('🗑️ 개인 컨텍스트 삭제 중...', { contextType });
-            const result = await this.callFunction('/context/delete', {
+            const result = await this.callFunction('context/delete', {
                 contextType
             });
 
