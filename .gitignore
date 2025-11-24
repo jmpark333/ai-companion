@@ -40,3 +40,4 @@ dist/
 # Temporary files
 *.tmp
 .cache/
+assets/tts/*.onnx
