@@ -1388,3 +1388,85 @@ body {
     font-size: 0.9em;
     margin: 10px 0;
 }
+
+/* 음성 아이콘 스타일 */
+.voice-icon {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 28px;
+    opacity: 0.7;
+    align-self: flex-end;
+}
+
+.voice-icon:hover {
+    background: rgba(0, 0, 0, 0.05);
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.voice-icon:active {
+    transform: scale(0.95);
+}
+
+.voice-icon:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.voice-icon:disabled:hover {
+    background: none;
+    transform: none;
+}
+
+/* 음성 아이콘 로딩 애니메이션 */
+.voice-icon.loading {
+    animation: voiceLoading 1.5s infinite;
+}
+
+@keyframes voiceLoading {
+    0%, 80%, 100% {
+        opacity: 0.7;
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+/* 음성 재생 중 인디케이터 */
+.voice-icon.playing {
+    background: var(--primary-color);
+    color: white;
+    animation: voicePlaying 1s infinite;
+}
+
+@keyframes voicePlaying {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* 모바일에서 음성 아이콘 크기 조정 */
+@media (max-width: 600px) {
+    .voice-icon {
+        font-size: 14px;
+        padding: 3px 6px;
+        min-width: 28px;
+        height: 24px;
+        margin-left: 6px;
+    }
+}

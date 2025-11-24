@@ -13,15 +13,25 @@ class SupertonicTTS {
                          window.location.hostname.includes('netlify.com');
         
         // 모델 URL 설정
-        this.modelUrl = 'https://huggingface.co/supertone/supertonic/resolve/main/supertonic_v0.1.onnx';
-        this.configUrl = 'https://huggingface.co/supertone/supertonic/resolve/main/config.json';
+        this.baseUrl = 'https://huggingface.co/Supertone/supertonic/resolve/main';
+        this.modelUrls = {
+            textEncoder: `${this.baseUrl}/onnx/text_encoder.onnx`,
+            durationPredictor: `${this.baseUrl}/onnx/duration_predictor.onnx`,
+            vectorEstimator: `${this.baseUrl}/onnx/vector_estimator.onnx`,
+            vocoder: `${this.baseUrl}/onnx/vocoder.onnx`
+        };
+        this.configUrl = `${this.baseUrl}/onnx/tts.json`;
+        this.voiceStyleUrl = `${this.baseUrl}/voice_styles/F1.json`;
         
         // 기본 설정
         this.config = {
             totalSteps: 4,      // 추론 스텝 수 (높을수록 품질 향상)
             speed: 1.0,         // 속도 (0.9-1.5 권장)
-            voiceStyle: 'default' // 음성 스타일
+            voiceStyle: 'F1'     // 음성 스타일
         };
+        
+        // 모델 세션 저장
+        this.sessions = {};
     }
 
     // ONNX 세션 초기화
@@ -50,26 +60,54 @@ class SupertonicTTS {
             console.log('📥 모델 파일 다운로드 중...');
             console.log(`🌐 환경: ${this.isNetlify ? 'Netlify' : '로컬'}`);
             
-            const [modelResponse, configResponse] = await Promise.all([
-                fetch(this.modelUrl),
-                fetch(this.configUrl)
+            // 모든 모델 파일과 설정 파일 다운로드
+            const [textEncoderResponse, durationPredictorResponse, vectorEstimatorResponse, vocoderResponse, configResponse, voiceStyleResponse] = await Promise.all([
+                fetch(this.modelUrls.textEncoder),
+                fetch(this.modelUrls.durationPredictor),
+                fetch(this.modelUrls.vectorEstimator),
+                fetch(this.modelUrls.vocoder),
+                fetch(this.configUrl),
+                fetch(this.voiceStyleUrl)
             ]);
             
-            if (!modelResponse.ok || !configResponse.ok) {
-                const modelStatus = modelResponse.status;
-                const configStatus = configResponse.status;
-                throw new Error(`모델 파일 다운로드 실패 - 모델: ${modelStatus}, 설정: ${configStatus}`);
+            // 모든 파일 다운로드 확인
+            const responses = [textEncoderResponse, durationPredictorResponse, vectorEstimatorResponse, vocoderResponse, configResponse, voiceStyleResponse];
+            const responseNames = ['textEncoder', 'durationPredictor', 'vectorEstimator', 'vocoder', 'config', 'voiceStyle'];
+            
+            for (let i = 0; i < responses.length; i++) {
+                if (!responses[i].ok) {
+                    throw new Error(`${responseNames[i]} 파일 다운로드 실패: ${responses[i].status}`);
+                }
             }
             
-            const modelArrayBuffer = await modelResponse.arrayBuffer();
+            // 모델 데이터 로드
+            const [textEncoderArray, durationPredictorArray, vectorEstimatorArray, vocoderArray] = await Promise.all([
+                textEncoderResponse.arrayBuffer(),
+                durationPredictorResponse.arrayBuffer(),
+                vectorEstimatorResponse.arrayBuffer(),
+                vocoderResponse.arrayBuffer()
+            ]);
+            
             const config = await configResponse.json();
+            const voiceStyle = await voiceStyleResponse.json();
             
             // ONNX 세션 생성 및 모델 로드
-            this.session = await ort.InferenceSession.create();
-            await this.session.loadModel(new Uint8Array(modelArrayBuffer));
+            console.log('🔄 ONNX 세션 생성 중...');
+            this.sessions.textEncoder = await ort.InferenceSession.create();
+            await this.sessions.textEncoder.loadModel(new Uint8Array(textEncoderArray));
+            
+            this.sessions.durationPredictor = await ort.InferenceSession.create();
+            await this.sessions.durationPredictor.loadModel(new Uint8Array(durationPredictorArray));
+            
+            this.sessions.vectorEstimator = await ort.InferenceSession.create();
+            await this.sessions.vectorEstimator.loadModel(new Uint8Array(vectorEstimatorArray));
+            
+            this.sessions.vocoder = await ort.InferenceSession.create();
+            await this.sessions.vocoder.loadModel(new Uint8Array(vocoderArray));
             
             // 설정 저장
             this.config = { ...this.config, ...config };
+            this.voiceStyle = voiceStyle;
             this.modelLoaded = true;
             this.isLoading = false;
             
@@ -112,9 +150,10 @@ class SupertonicTTS {
     }
 
     // 오디오 재생
-    async playAudio(audioBuffer) {
+    async playAudio(audioData) {
         try {
-            const audioBuffer = await this.audioContext.decodeAudioData(audioBuffer);
+            // 오디오 데이터를 AudioBuffer로 변환
+            const audioBuffer = this.convertToAudioBuffer(audioData);
             const source = this.audioContext.createBufferSource();
             source.buffer = audioBuffer;
             
@@ -138,8 +177,8 @@ class SupertonicTTS {
 
     // 텍스트 음성으로 변환 후 바로 재생
     async speak(text, options = {}) {
-        const audioBuffer = await this.synthesize(text, options);
-        await this.playAudio(audioBuffer);
+        const audioData = await this.synthesize(text, options);
+        await this.playAudio(audioData);
     }
 
     // 오디오 다운로드 (WAV 형식)
@@ -176,88 +215,104 @@ class SupertonicTTS {
             .substring(0, 500); // 최대 길이 제한
     }
 
-    // ONNX 모델로 음성 생성 (간단화된 버전)
+    // ONNX 모델로 음성 생성 (Supertonic 파이프라인)
     async generateSpeech(text, config) {
         try {
-            // 텍스트를 토큰화 (간단한 구현)
-            const tokens = this.tokenizeText(text);
+            console.log('🎵 텍스트 전처리 중...');
             
-            // 임의 음성 파라미터 생성 (실제로는 더 복잡한 로직 필요)
-            const melInputs = this.generateMelSpectrogram(tokens.length, config);
+            // 1. 텍스트 전처리 및 토큰화
+            const textTokens = await this.preprocessText(text);
+            console.log('토큰화 완료:', textTokens.length, '토큰');
             
-            // ONNX 모델 실행
-            const outputs = await this.session.run({
-                input: melInputs,
-                total_steps: config.totalSteps,
-                speed: config.speed
-            });
+            // 2. 텍스트 인코더 실행
+            console.log('🔄 텍스트 인코딩 중...');
+            const textEncoderInputs = {
+                input_ids: new ort.Tensor(new BigInt64Array(textTokens), [1, textTokens.length], 'int64'),
+                style_tokens: new ort.Tensor(new Float32Array(this.voiceStyle.style_tokens), [1, this.voiceStyle.style_tokens.length], 'float32')
+            };
             
-            // 오디오 데이터 변환
-            const audioData = this.postprocessAudio(outputs);
+            const textEncoderOutputs = await this.sessions.textEncoder.run(textEncoderInputs);
+            const textEmbeddings = textEncoderOutputs.text_embeddings;
             
-            return audioData;
+            // 3. 지속 시간 예측
+            console.log('⏱️ 지속 시간 예측 중...');
+            const durationInputs = {
+                text_embeddings: textEmbeddings,
+                style_tokens: textEncoderInputs.style_tokens
+            };
+            
+            const durationOutputs = await this.sessions.durationPredictor.run(durationInputs);
+            const durations = durationOutputs.durations;
+            
+            // 4. 벡터 추정
+            console.log('🔊 벡터 추정 중...');
+            const vectorInputs = {
+                text_embeddings: textEmbeddings,
+                durations: durations,
+                style_tokens: textEncoderInputs.style_tokens,
+                speed: new ort.Tensor(new Float32Array([config.speed]), [1], 'float32')
+            };
+            
+            const vectorOutputs = await this.sessions.vectorEstimator.run(vectorInputs);
+            const latents = vectorOutputs.latents;
+            
+            // 5. 보코더로 오디오 생성
+            console.log('🎶 오디오 생성 중...');
+            const vocoderInputs = {
+                latents: latents
+            };
+            
+            const vocoderOutputs = await this.sessions.vocoder.run(vocoderInputs);
+            const audioWaveform = vocoderOutputs.audio;
+            
+            console.log('✅ 음성 생성 완료');
+            return audioWaveform.data;
             
         } catch (error) {
-            console.error('음성 생성 실패:', error);
+            console.error('❌ 음성 생성 실패:', error);
             throw error;
         }
     }
 
-    // 텍스트 토큰화 (간단한 구현)
-    tokenizeText(text) {
-        // 실제로는 어휘 기반 토큰화가 필요하지만,
-        // 여기서는 간단하게 문자 단위로 분할
-        return text.split('').map(char => char.charCodeAt(0));
-    }
-
-    // 멜 스펙트로그램 생성 (간단화된 버전)
-    generateMelSpectrogram(tokenCount, config) {
-        // 더미 값 생성 (간단한 구현)
-        const duration = tokenCount * 0.1; // 문자당 0.1초
-        const melLength = Math.ceil(duration * 75); // 75Hz 샘플링
+    // 텍스트 전처리 및 토큰화
+    async preprocessText(text) {
+        // 기본적인 텍스트 정리
+        const cleanText = text
+            .trim()
+            .replace(/[^\w\s\uAC00-\uD7FF\uF900-\uFAFF\d.,!?]/g, '') // 특수문자 제거
+            .replace(/\s+/g, ' ') // 여러 공백을 하나로
+            .substring(0, 500); // 최대 길이 제한
         
-        // 간단한 멜 스펙트로그램 (실제로는 더 복잡한 계산 필요)
-        const melSpectrogram = new Float32Array(melLength * 80); // 80 멜 채널
-        
-        // 간단한 패턴 생성 (실제 모델은 더 복잡한 입력 필요)
-        for (let i = 0; i < melLength; i++) {
-            const time = i / melLength;
-            const freq = Math.sin(time * Math.PI * 2 * 440) * 0.5 + 0.5; // 간단한 사인파
-            
-            for (let j = 0; j < 80; j++) {
-                melSpectrogram[i * 80 + j] = freq * (1 - j / 80);
+        // 간단한 문자 토큰화 (실제로는 더 복잡한 토크나이저 필요)
+        const tokens = [];
+        for (let char of cleanText) {
+            // 영어 소문자로 변환
+            const lowerChar = char.toLowerCase();
+            // ASCII 코드로 변환 (간단한 구현)
+            const charCode = lowerChar.charCodeAt(0);
+            if (charCode >= 32 && charCode <= 126) { // 출력 가능한 ASCII 문자
+                tokens.push(BigInt(charCode - 32)); // 0부터 시작하도록 조정
             }
         }
         
-        return new ort.Tensor(
-            melSpectrogram,
-            [1, melLength, 80],
-            'float32'
-        );
+        // 최소한 하나의 토큰이 있도록 보장
+        if (tokens.length === 0) {
+            tokens.push(BigInt(0)); // 공백 문자
+        }
+        
+        return tokens;
     }
 
-    // 오디오 후처리
-    postprocessAudio(outputs) {
-        // 간단한 오디오 후처리
-        const audioData = outputs[0].data;
-        
-        // 오디오 정규화
-        const normalizedAudio = audioData.map(value => 
-            Math.tanh(value) * 0.8 // 간단한 정규화
-        );
-        
-        return normalizedAudio;
-    }
-
-    // AudioBuffer를 WAV로 변환
+    // AudioBuffer로 변환
     convertToAudioBuffer(audioData) {
-        const sampleRate = 22050; // 샘플링 레이트
+        const sampleRate = 44100; // Supertonic TTS는 44.1kHz 사용
         const audioBuffer = this.audioContext.createBuffer(1, audioData.length, sampleRate);
         
-        // 오디오 데이터 복사
+        // 오디오 데이터 복사 및 정규화
         const channelData = audioBuffer.getChannelData(0);
         for (let i = 0; i < audioData.length; i++) {
-            channelData[i] = audioData[i];
+            // 오디오 데이터 정규화 (-1에서 1 사이로)
+            channelData[i] = Math.max(-1, Math.min(1, audioData[i]));
         }
         
         return audioBuffer;
@@ -288,8 +343,8 @@ class SupertonicTTS {
         view.setUint16(20, 1, true); // 오디오 포맷 (PCM)
         view.setUint16(22, 1, true); // 채널 수
         view.setUint32(24, sampleRate, true); // 샘플링 레이트
-        view.setUint32(28, sampleRate, true); // 바이트 레이트
-        view.setUint16(32, numberOfChannels * 8, true); // 블록 정렬
+        view.setUint32(28, sampleRate * 2, true); // 바이트 레이트 (샘플링 레이트 * 채널 * 비트/8)
+        view.setUint16(32, numberOfChannels * 16, true); // 블록 정렬
         view.setUint16(34, 16, true); // 비트 깊이
         writeString(36, 'data');
         view.setUint32(40, length * 2, true); // 데이터 크기

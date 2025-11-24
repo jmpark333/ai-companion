@@ -18,6 +18,13 @@ Thumbs.db
 # Memory data (local only)
 memory-data.json
 
+# Local development environment
+local/
+
+# Personal context files (local only)
+basic-info.txt
+basic-situation.txt
+
 # Build output
 dist/
 .netlify/
