@@ -161,8 +161,16 @@ class SupertonicTTS {
         const fullUrl = `${window.location.origin}${onnxDir}/tts.json`;
         console.log(`🔗 전체 URL: ${fullUrl}`);
 
-        const response = await fetch(`${onnxDir}/tts.json`);
-        console.log(`📋 응답 상태: ${response.status}, OK: ${response.ok}`);
+        // 먼저 상대 경로 시도
+        let response = await fetch(`${onnxDir}/tts.json`);
+        console.log(`📋 상대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
+
+        // 상대 경로가 실패하면 절대 경로 시도
+        if (!response.ok || await this.isHtmlResponse(response)) {
+            console.log(`🔄 상대 경로 실패, 절대 경로 시도: ${fullUrl}`);
+            response = await fetch(fullUrl);
+            console.log(`📋 절대 경로 응답 상태: ${response.status}, OK: ${response.ok}`);
+        }
 
         if (!response.ok) {
             console.error(`❌ HTTP 오류: ${response.status} ${response.statusText}`);
@@ -173,23 +181,17 @@ class SupertonicTTS {
         console.log(`📋 Content-Type: ${contentType}`);
 
         // HTML 응답 감지 - 더 강력한 검사
-        const text = await response.text();
-        console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
-
-        // 응답 내용이 HTML인지 확인 (Content-Type 헤더와 실제 내용 모두 확인)
-        const isHtmlContent = text.trim().toLowerCase().startsWith('<!doctype') ||
-                             text.trim().toLowerCase().startsWith('<html') ||
-                             (contentType && contentType.includes('text/html'));
-
-        if (isHtmlContent) {
+        if (await this.isHtmlResponse(response)) {
             console.error(`❌ HTML 응답 수신! 서버에서 JSON 파일을 찾을 수 없습니다.`);
             console.error(`🌐 현재 페이지 URL: ${window.location.href}`);
             console.error(`📁 시도한 경로: ${onnxDir}/tts.json`);
             console.error(`🔗 전체 URL: ${fullUrl}`);
             console.error(`📋 Content-Type: ${contentType}`);
-            console.error(`📄 응답 내용 (300자): ${text.substring(0, 300)}...`);
             throw new Error(`TTS 설정 파일을 찾을 수 없습니다. 서버가 HTML을 반환했습니다. URL: ${fullUrl}`);
         }
+
+        const text = await response.text();
+        console.log(`📄 응답 내용 (처음 200자): ${text.substring(0, 200)}`);
 
         try {
             const cfgs = JSON.parse(text);
@@ -200,6 +202,15 @@ class SupertonicTTS {
             console.error(`📄 응답 내용 (500자): ${text.substring(0, 500)}`);
             throw new Error(`TTS 설정 파일 파싱 실패: ${error.message}. 응답이 JSON이 아닙니다.`);
         }
+    }
+
+    // HTML 응답인지 확인하는 헬퍼 함수
+    async isHtmlResponse(response) {
+        const contentType = response.headers.get('content-type');
+        const text = await response.clone().text();
+        return text.trim().toLowerCase().startsWith('<!doctype') ||
+               text.trim().toLowerCase().startsWith('<html') ||
+               (contentType && contentType.includes('text/html'));
     }
 
     // 텍스트 프로세서 로드

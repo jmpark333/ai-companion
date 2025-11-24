@@ -1,14 +1,25 @@
-# Netlify redirects file
+# Netlify redirects file - 처리 순서 중요!
 # 각 라인은: from to [status]
+
+# TTS 모델 파일 접근 - 최우선 처리
+/models/tts/* /models/tts/:splat 200
+/models/* /models/:splat 200
 
 # API 및 Functions 리디렉션
 /api/* /.netlify/functions/:splat 200
 /memory /.netlify/functions/memory 200
 /memory/* /.netlify/functions/memory/:splat 200
+/functions/* /.netlify/functions/:splat 200
 
 # 정적 파일 리디렉션 (SPA 처리에서 제외)
-/models/* /models/:splat 200
 /js/* /js/:splat 200
+/*.js /:splat 200
+/*.css /:splat 200
+/*.json /:splat 200
+/*.onnx /:splat 200
+/*.png /:splat 200
+/*.jpg /:splat 200
+/*.ico /:splat 200
 
-# 모든 나머지 요청을 index.html로 리디렉션 (SPA)
+# 모든 나머지 요청을 index.html로 리디렉션 (SPA) - 마지막 처리
 /* /index.html 200
