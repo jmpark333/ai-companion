@@ -74,12 +74,13 @@ class SupertonicTTS {
                 console.log('✅ 음성 스타일 로드 성공:', this.config.voiceStyle);
             } catch (styleError) {
                 console.warn('⚠️ 음성 스타일 로드 실패, 기본 스타일 사용:', styleError.message);
-                // 기본 스타일 - 빈 배열로 설정하여 모델이 오류 없이 작동하도록 함
+                // 기본 스타일 - ONNX 텐서 형태의 기본값 생성
+                // 이 values는 기본 설정에서 얻은 텐서 크기입니다
                 this.currentStyle = {
-                    dp: [], // duration predictor style
-                    ttl: [] // text-to-latent style
+                    dp: new ort.Tensor('float32', new Float32Array([0, 0, 0, 0, 0]), [1, 5]), // 5차원 스타일 벡터
+                    ttl: new ort.Tensor('float32', new Float32Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), [1, 10]) // 10차원 스타일 벡터
                 };
-                console.log('🔧 기본 스타일 적용:', this.currentStyle);
+                console.log('🔧 기본 스타일 텐서 생성:', this.currentStyle);
             }
             
             this.modelLoaded = true;
