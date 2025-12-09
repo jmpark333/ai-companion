@@ -1,0 +1,1288 @@
+<style>
+/* AI 기술 블로그 표준 스타일 */
+body {
+  font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #333;
+}
+p {
+    margin-bottom: 1.2em;
+    word-break: keep-all;
+}
+h2 {
+  border-bottom: 2px solid #0066cc;
+  padding-bottom: 10px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #0066cc;
+}
+h3 {
+    font-size: 1.2em;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e6f2ff;
+    padding-bottom: 5px;
+    color: #0066cc;
+}
+.concept-block {
+    background-color: #f0f8ff;
+    border-left: 4px solid #0066cc;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+}
+.code-block {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.code-block.collapsed {
+    max-height: 200px;
+}
+
+.code-block.expanded {
+    max-height: none;
+}
+
+.code-toggle-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(0, 102, 204, 0.8);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.code-toggle-btn:hover {
+    background-color: rgba(0, 102, 204, 1);
+}
+
+.code-block.collapsed .code-toggle-btn::after {
+    content: "펼치기 ▼";
+}
+
+.code-block.expanded .code-toggle-btn::after {
+    content: "접기 ▲";
+}
+
+.code-fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, #f5f5f5);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.code-block.expanded .code-fade-overlay {
+    opacity: 0;
+}
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 16px;
+  text-align: center;
+}
+.performance-table th, .performance-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+.performance-table th {
+  background-color: #0066cc;
+  color: white;
+  font-weight: bold;
+}
+.performance-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.ai-tech {
+  background-color: #e6f3ff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #0066cc;
+}
+.warning {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 15px;
+    margin: 20px 0;
+}
+.info {
+    background-color: #d1ecf1;
+    border-left: 5px solid #17a2b8;
+    padding: 15px;
+    margin: 20px 0;
+}
+.tip {
+    background-color: #d4edda;
+    border-left: 5px solid #28a745;
+    padding: 15px;
+    margin: 20px 0;
+}
+.demo-container {
+    border: 2px solid #e6f2ff;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 30px 0;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e6f2ff 100%);
+}
+.status-box {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.status-box.error {
+    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+}
+.status-box.success {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+}
+.backend-badge {
+    background: #4CAF50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    display: none;
+}
+.backend-badge.visible {
+    display: block;
+}
+.backend-badge.webgpu {
+    background: #4CAF50;
+}
+.backend-badge.wasm {
+    background: #FF9800;
+}
+.result-item {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.result-text-container {
+    margin-bottom: 15px;
+}
+.result-text-label {
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 8px;
+}
+.result-text {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #0066cc;
+    font-family: monospace;
+    word-break: break-all;
+}
+.result-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.info-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+.result-player {
+    margin-bottom: 15px;
+}
+.result-player audio {
+    width: 100%;
+    height: 40px;
+}
+.result-actions {
+    text-align: center;
+}
+.result-actions button {
+    background: #0066cc;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+.result-actions button:hover {
+    background: #0052a3;
+}
+
+/* 중앙 문단 핵심문장 음영 애니메이션: 스킨에서 공통 제공. 개별 문서에 추가 금지. */
+</style>
+
+<h2 id="supertonic-tts-guide">🎤 Supertonic TTS 브라우저 구현 가이드</h2>
+
+<div class="concept-block">
+<b>Supertonic TTS</b>는 브라우저에서 직접 실행되는 고품질 텍스트 음성 변환(Text-to-Speech) 라이브러리입니다. 이 가이드는 온디바이스(on-device) TTS 구현의 전체 과정을 다루며, 초보자부터 중급자까지 단계별로 따라할 수 있는 실용적인 튜토리얼을 제공합니다.
+</div>
+
+<h3 id="what-is-supertonic">🚀 Supertonic TTS란?</h3>
+<p>Supertonic TTS는 다음 특징을 갖는 혁신적인 음성 합성 라이브러리입니다:</p>
+<ul>
+<li><b>온디바이스 처리</b>: 서버 없이 브라우저에서 직접 실행</li>
+<li><b>고속 처리</b>: 기존 TTS보다 최대 10배 빠른 성능</li>
+<li><b>최상급 음질</b>: 실제 사람과 구분되지 않는 자연스러운 음성</li>
+<li><b>프라이버시 보호</b>: 텍스트가 외부로 전송되지 않음</li>
+<li><b>크로스플랫폼</b>: 모든 주요 브라우저에서 동작</li>
+<li><b>WebGPU 지원</b>: 최신 GPU 가속 기술 지원</li>
+</ul>
+
+<h2 id="prerequisites">📋 사전 준비 사항</h2>
+
+<h3 id="system-requirements">시스템 요구사항</h3>
+<ul>
+<li><b>브라우저</b>: Chrome 88+, Firefox 84+, Safari 14+, Edge 88+</li>
+<li><b>메모리</b>: 최소 4GB RAM (모델 로딩을 위해)</li>
+<li><b>저장공간</b>: 약 400MB (모델 파일 포함)</li>
+<li><b>네트워크</b>: 초기 모델 다운로드 시 필요</li>
+</ul>
+
+<h3 id="required-files">필수 파일 구조</h3>
+<div class="code-block">
+<pre><code>project/
+├── index.html              # 메인 HTML 파일
+├── supertonic-tts.js       # Supertonic TTS 라이브러리
+├── helper.js              # 헬퍼 함수 라이브러리
+└── assets/                 # 모델 및 설정 파일
+    ├── onnx/              # ONNX 모델 파일
+    │   ├── duration_predictor.onnx
+    │   ├── text_encoder.onnx
+    │   ├── vector_estimator.onnx
+    │   └── vocoder.onnx
+    ├── voice_styles/      # 음성 스타일 파일
+    │   ├── F1.json        # 여성 음성 스타일
+    │   ├── F2.json        # 여성 음성 스타일 2
+    │   ├── M1.json        # 남성 음성 스타일
+    │   └── M2.json        # 남성 음성 스타일 2
+    └── config/            # 설정 파일
+        ├── config.json
+        └── unicode_indexer.json</code></pre>
+</div>
+
+<h2 id="step-by-step-setup">🔧 단계별 구현 가이드</h2>
+
+<h3 id="step1-onx-files">1단계: ONNX 모델 파일 준비</h3>
+
+<div class="warning">
+⚠️ <b>중요한 유의사항</b>: Supertonic TTS는 ONNX (Open Neural Network Exchange) 형식의 모델을 사용합니다. 모델 파일 크기가 100MB를 초과할 수 있으므로 Git LFS (Large File Storage)를 반드시 설정해야 합니다.
+</div>
+
+<div class="code-block">
+<pre><code class="language-bash"># 프로젝트 초기화
+git init supersonic-tts-project
+cd supersonic-tts-project
+
+# Git LFS 설정 (필수)
+git lfs install
+git lfs track "*.onnx"
+
+# 프로젝트 구조 생성
+mkdir -p assets/onnx assets/voice_styles
+
+# ONNX 모델 파일 복사 또는 다운로드
+# 공식 저장소: https://github.com/supertone-inc/supertonic</code></pre>
+</div>
+
+<div class="tip">
+💡 <b>팁</b>: 모델 파일이 매우 큰 경우 git lfs migrate 명령어를 사용하여 기존 커밋의 대용량 파일들을 LFS로 변환할 수 있습니다.
+</div>
+
+<h3 id="step2-voice-styles">2단계: 음성 스타일 파일 설정</h3>
+
+<div class="info">
+💡 <b>음성 스타일 파일 설명</b>: Supertonic TTS는 style_ttl과 style_dp 두 개의 텐서를 사용하여 다양한 음성 특성을 표현합니다. 각 스타일 파일은 특정 음성의 성격과 톤을 정의합니다.
+</div>
+
+<div class="code-block">
+<pre><code class="language-javascript">/**
+ * 올바른 음성 스타일 텐서 로딩 함수
+ */
+async function loadVoiceStyle(voiceStylePaths) {
+    try {
+        // 첫 번째 스타일 파일에서 차원 정보 추출
+        const firstStyleResponse = await fetch(voiceStylePaths[0]);
+        const firstStyle = await firstStyleResponse.json();
+        
+        // 텐서 차원 확인
+        const ttlDims = firstStyle.style_ttl.dims;    // 예: [1, 10, 768]
+        const dpDims = firstStyle.style_dp.dims;      // 예: [1, 5, 256]
+        
+        if (ttlDims[0] !== 1 || dpDims[0] !== 1) {
+            throw new Error('Supertonic TTS는 단일 화자만 지원합니다.');
+        }
+        
+        // 텐서 데이터 평탄화
+        const ttlFlat = new Float32Array(firstStyle.style_ttl.data.flat(Infinity));
+        const dpFlat = new Float32Array(firstStyle.style_dp.data.flat(Infinity));
+        
+        // ONNX Runtime 텐서 생성
+        const ttlTensor = new ort.Tensor('float32', ttlFlat, ttlDims);
+        const dpTensor = new ort.Tensor('float32', dpFlat, dpDims);
+        
+        return new Style(ttlTensor, dpTensor);
+        
+    } catch (error) {
+        console.error('음성 스타일 로딩 실패:', error);
+        throw error;
+    }
+}</code></pre>
+</div>
+
+<h3 id="step3-core-implementation">3단계: 핵심 TTS 클래스 구현</h3>
+
+<div class="code-block">
+<pre><code class="language-javascript">/**
+ * Supertonic TTS 메인 클래스
+ * Hugging Face Space 예제를 기반으로 한 브라우저 구현
+ */
+class SupertonicTTS {
+    constructor() {
+        this.textToSpeech = null;
+        this.cfgs = null;
+        this.currentStyle = null;
+        this.modelLoaded = false;
+        this.isLoading = false;
+        this.executionProvider = 'wasm'; // webgpu 또는 wasm
+        
+        // 기본 설정
+        this.config = {
+            totalSteps: 5,      // 추론 스텝 수 (1-10 권장)
+            speed: 1.05,        // 음성 속도 (0.5-2.0)
+            voiceStyle: 'F1',   // 기본 음성 스타일
+            baseUrl: '/assets'  // 모델 파일 기준 경로
+        };
+    }
+
+    /**
+     * TTS 엔진 초기화
+     */
+    async initialize() {
+        if (this.modelLoaded || this.isLoading) {
+            console.log('모델이 이미 로드되었거나 로드 중입니다.');
+            return this.modelLoaded;
+        }
+
+        this.isLoading = true;
+        console.log('Supertonic TTS 모델 로딩 시작...');
+
+        try {
+            // Web Audio API 확인
+            if (!window.AudioContext) {
+                throw new Error('이 브라우저는 Web Audio API를 지원하지 않습니다.');
+            }
+            
+            // ONNX Runtime Web 확인
+            if (!window.ort) {
+                throw new Error('ONNX Runtime Web이 로드되지 않았습니다. CDN에서 ort.min.js를 로드하세요.');
+            }
+
+            // WebGPU 우선 시도
+            try {
+                const result = await this.loadModels(this.config.baseUrl, {
+                    executionProviders: ['webgpu'],
+                    graphOptimizationLevel: 'all'
+                });
+                
+                this.textToSpeech = result.textToSpeech;
+                this.cfgs = result.cfgs;
+                this.executionProvider = 'webgpu';
+                
+                console.log('✅ WebGPU 백엔드로 모델 로드 완료');
+            } catch (webgpuError) {
+                console.log('WebGPU를 지원하지 않음, WebAssembly로 폴백');
+                
+                const result = await this.loadModels(this.config.baseUrl, {
+                    executionProviders: ['wasm'],
+                    graphOptimizationLevel: 'all'
+                });
+                
+                this.textToSpeech = result.textToSpeech;
+                this.cfgs = result.cfgs;
+                this.executionProvider = 'wasm';
+                
+                console.log('✅ WebAssembly 백엔드로 모델 로드 완료');
+            }
+            
+            // 음성 스타일 로드
+            const stylePath = `/assets/voice_styles/${this.config.voiceStyle}.json`;
+            this.currentStyle = await loadVoiceStyle([stylePath]);
+            
+            this.modelLoaded = true;
+            this.isLoading = false;
+            
+            console.log(`✅ Supertonic TTS 모델 로딩 완료 (${this.executionProvider.toUpperCase()} 백엔드)`);
+            return true;
+            
+        } catch (error) {
+            this.isLoading = false;
+            console.error('❌ TTS 모델 로딩 실패:', error);
+            throw new Error(`TTS 모델 로딩 실패: ${error.message}`);
+        }
+    }
+
+    /**
+     * 음성 생성 메인 함수
+     */
+    async speak(text, options = {}) {
+        if (!this.modelLoaded) {
+            await this.initialize();
+        }
+
+        const {
+            progressCallback = () => {},
+            totalSteps = this.config.totalSteps,
+            speed = this.config.speed
+        } = options;
+
+        try {
+            const { wav, duration } = await this.textToSpeech.call(
+                text, 
+                this.currentStyle, 
+                totalSteps,
+                speed,
+                0.3,
+                progressCallback
+            );
+            
+            // WAV 파일 생성 및 재생
+            const wavLen = Math.floor(this.textToSpeech.sampleRate * duration[0]);
+            const wavOut = wav.slice(0, wavLen);
+            
+            return {
+                audioBuffer: wavOut,
+                duration: duration[0],
+                sampleRate: this.textToSpeech.sampleRate
+            };
+            
+        } catch (error) {
+            console.error('음성 생성 실패:', error);
+            throw error;
+        }
+    }
+}</code></pre>
+</div>
+
+<h3 id="step4-usage-example">4단계: 사용 예제와 UI</h3>
+
+<div class="demo-container">
+<h4>🎤 실시간 Supertonic TTS 데모</h4>
+
+<div id="statusBox" class="status-box">
+    <div class="status-text-wrapper">
+        <div id="statusText">ℹ️ <strong>모델 로딩 중...</strong> 잠시만 기다려주세요...</div>
+    </div>
+    <div id="backendBadge" class="backend-badge">WebAssembly</div>
+</div>
+
+<div class="main-content">
+    <div class="left-panel">
+        <div class="section">
+            <div class="ref-audio-label">
+                <label for="voiceStyleSelect">음성 스타일: </label>
+                <span id="voiceStyleInfo" class="ref-audio-info">로딩 중...</span>
+            </div>
+            <select id="voiceStyleSelect">
+                <option value="assets/voice_styles/M1.json">남성 1 (M1)</option>
+                <option value="assets/voice_styles/M2.json">남성 2 (M2)</option>
+                <option value="assets/voice_styles/F1.json">여성 1 (F1)</option>
+                <option value="assets/voice_styles/F2.json">여성 2 (F2)</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <label for="text">음성으로 변환할 텍스트:</label>
+            <textarea id="text" placeholder="변환할 텍스트를 입력하세요...">이번 아침에는 공원에서 산책을 했습니다. 새들의 지저 소리와 시원한 바람이 너무나 기분 좋아서 한참 동안 서서 그 소리를 듣고 있었습니다.</textarea>
+        </div>
+
+        <div class="params-grid">
+            <div class="section">
+                <label for="totalStep">총 스텝 수 (높을수록 품질 향상):</label>
+                <input type="number" id="totalStep" value="5" min="1" max="50">
+            </div>
+            
+            <div class="section">
+                <label for="speed">속도 (0.9-1.5 권장):</label>
+                <input type="number" id="speed" value="1.05" min="0.5" max="2.0" step="0.05">
+            </div>
+        </div>
+
+        <button id="generateBtn">음성 생성</button>
+
+        <div id="error" class="error"></div>
+    </div>
+
+    <div class="right-panel">
+        <div id="results" class="results">
+            <div class="results-placeholder">
+                <div class="results-placeholder-icon">🎤</div>
+                <p>생성된 음성이 여기에 표시됩니다</p>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="code-block">
+<pre><code class="language-html"><!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Supertonic TTS Demo</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.0/dist/ort.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Supertonic TTS Demo</h1>
+        
+        <textarea id="textInput" placeholder="텍스트를 입력하세요...">
+        안녕하세요. Supertonic TTS로 만든 한국어 음성입니다.
+        </textarea>
+        
+        <div class="controls">
+            <select id="voiceStyle">
+                <option value="F1">여성 (F1)</option>
+                <option value="M1">남성 (M1)</option>
+            </select>
+            
+            <input type="range" id="speed" min="0.5" max="2.0" step="0.1" value="1.05">
+            <label for="speed">속도: <span id="speedValue">1.05x</span></label>
+        </div>
+        
+        <button id="generateBtn" onclick="generateSpeech()">
+            🔊 음성 생성
+        </button>
+        
+        <div id="status"></div>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+    
+    <script src="supertonic-tts.js"></script>
+    <script src="demo.js"></script>
+</body>
+</html></code></pre>
+</div>
+
+<div class="code-block">
+<pre><code class="language-javascript">// 데모 스크립트
+let ttsEngine = new SupertonicTTS();
+
+// 속도 조절 UI 업데이트
+document.getElementById('speed').addEventListener('input', function(e) {
+    const value = parseFloat(e.target.value);
+    document.getElementById('speedValue').textContent = value.toFixed(2) + 'x';
+    ttsEngine.config.speed = value;
+});
+
+// 음성 스타일 변경
+document.getElementById('voiceStyle').addEventListener('change', function(e) {
+    ttsEngine.config.voiceStyle = e.target.value;
+});
+
+// 음성 생성 함수
+async function generateSpeech() {
+    const text = document.getElementById('textInput').value.trim();
+    const btn = document.getElementById('generateBtn');
+    const status = document.getElementById('status');
+    const audioPlayer = document.getElementById('audioPlayer');
+    
+    if (!text) {
+        alert('텍스트를 입력하세요.');
+        return;
+    }
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '모델 로딩 중...';
+        status.textContent = '모델을 로드하고 있습니다...';
+        
+        // TTS 엔진 초기화 (첫 번째 실행 시)
+        if (!ttsEngine.modelLoaded) {
+            await ttsEngine.initialize();
+        }
+        
+        btn.textContent = '음성 생성 중...';
+        status.textContent = '음성을 생성하고 있습니다...';
+        
+        // Progress callback 설정
+        const progressCallback = (step, total) => {
+            status.textContent = `음성 생성 중... (${step}/${total} 스텝)`;
+        };
+        
+        // 음성 생성 및 재생
+        const result = await ttsEngine.speak(text, {
+            progressCallback: progressCallback
+        });
+        
+        // 오디오 생성 및 재생
+        const audioBlob = createAudioBlob(result.audioBuffer, result.sampleRate);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        audioPlayer.src = audioUrl;
+        audioPlayer.play();
+        
+        status.textContent = '✅ 음성 생성 완료!';
+        
+    } catch (error) {
+        console.error('음성 생성 실패:', error);
+        status.textContent = '❌ 음성 생성 실패: ' + error.message;
+        
+        // 폴백: Web Speech API 사용
+        if ('speechSynthesis' in window) {
+            status.textContent = 'Web Speech API로 폴백 음성을 생성합니다...';
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            speechSynthesis.speak(utterance);
+        }
+        
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔊 음성 생성';
+    }
+}</code></pre>
+</div>
+
+<h2 id="common-issues">⚠️ 흔한 문제점과 해결법</h2>
+
+<h3 id="model-loading-errors">모델 로딩 오류</h3>
+
+<div class="warning">
+⚠️ <b>증상</b>: "ONNX Runtime Web not found" 또는 모델 파일 로딩 실패
+</div>
+
+<b>원인 및 해결:</b>
+<ul>
+<li><b>ONNX Runtime 미로드</b>: CDN 스크립트 추가
+<div class="code-block">
+<pre><code class="language-html"><!-- ONNX Runtime Web CDN (필수) -->
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.16.0/dist/ort.min.js"></script>
+
+<!-- ONNX Runtime 로드 확인 및 대체 CDN 스크립트 -->
+<script>
+// ONNX Runtime 로드 상태 확인 및 자동 복구
+window.addEventListener('load', function() {
+    if (typeof window.ort === 'undefined') {
+        console.error('❌ ONNX Runtime Web이 로드되지 않았습니다.');
+        console.log('🔄 CDN에서 ONNX Runtime 재시도 중...');
+        
+        // 대체 CDN 시도
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/onnxruntime-web@1.16.0/dist/ort.min.js';
+        script.onload = function() {
+            console.log('✅ ONNX Runtime Web이 성공적으로 로드되었습니다.');
+        };
+        script.onerror = function() {
+            console.error('❌ 모든 CDN에서 ONNX Runtime 로드 실패');
+        };
+        document.head.appendChild(script);
+    } else {
+        console.log('✅ ONNX Runtime Web이 정상적으로 로드되었습니다.');
+    }
+});
+</script></code></pre>
+</div>
+</li>
+<li><b>CORS 정책 오류</b>: 로컬에서 file:/// 프로토콜 사용 시 발생
+<div class="tip">
+💡 <b>해결법</b>: 로컬 서버를 실행하거나 HTTPS 도메인에서 테스트하세요.
+</div>
+</li>
+<li><b>메모리 부족</b>: 큰 모델 파일 로딩 시 발생
+<div class="tip">
+💡 <b>해결법</b>: 브라우저 탭을 다시 시작하거나 더 많은 RAM이 있는 기기 사용
+</div>
+</li>
+</ul>
+
+<h3 id="tensor-format-errors">텐서 형태 오류</h3>
+
+<div class="warning">
+⚠️ <b>증상</b>: "input 'style_dp' is missing in 'feeds'"
+</div>
+
+<b>원인 및 해결:</b>
+<div class="code-block">
+<pre><code class="language-javascript">// ❌ 잘못된 방식
+const style = {
+    dp: [],           // 빈 배열
+    ttl: []           // 빈 배열
+};
+
+// ✅ 올바른 방식
+const style = {
+    dp: ort.Tensor('float32', dpData, dpShape),   // ORT 텐서
+    ttl: ort.Tensor('float32', ttlData, ttlShape) // ORT 텐서
+};</code></pre>
+</div>
+
+<h3 id="audio-playback-issues">오디오 재생 문제</h3>
+
+<div class="warning">
+⚠️ <b>증상</b>: 음성이 생성되지만 재생되지 않음
+</div>
+
+<b>해결 방법:</b>
+<ul>
+<li><b>AudioContext 중단</b>: 사용자 상호작용 후 resume() 호출
+<div class="code-block">
+<pre><code class="language-javascript">// 오디오 재생 전 AudioContext 활성화
+if (this.audioContext && this.audioContext.state === 'suspended') {
+    await this.audioContext.resume();
+}</code></pre>
+</div>
+</li>
+<li><b>데이터 형태 오류</b>: Float32Array 형태로 변환 확인
+<div class="code-block">
+<pre><code class="language-javascript">// AudioBuffer 생성 시 올바른 데이터 형태 사용
+const audioBuffer = this.audioContext.createBuffer(1, audioData.length, 44100);
+const channelData = audioBuffer.getChannelData(0);
+
+// Float32Array로 변환하여 복사
+for (let i = 0; i < audioData.length; i++) {
+    channelData[i] = Math.max(-1, Math.min(1, audioData[i]));
+}</code></pre>
+</div>
+</li>
+</ul>
+
+<h2 id="performance-optimization">⚡ 성능 최적화 가이드</h2>
+
+<h3 id="memory-management">메모리 관리</h3>
+
+<div class="tip">
+💡 <b>중요한 최적화 팁</b>: Supertonic TTS는 메모리를 많이 사용하는 라이브러리입니다. 다음 최적화 방법을 적용하세요:
+</div>
+
+<ol>
+<li><b>모델 캐싱</b>: 한 번 초기화 후 인스턴스 재사용
+<div class="code-block">
+<pre><code class="language-javascript">// 전역 TTS 인스턴스 생성 (한 번만)
+window.ttsEngine = new SupertonicTTS();
+
+// 여러 번 재사용
+async function speakMultipleTexts(texts) {
+    if (!window.ttsEngine.modelLoaded) {
+        await window.ttsEngine.initialize();
+    }
+    
+    for (const text of texts) {
+        await window.ttsEngine.speak(text);
+    }
+}</code></pre>
+</div>
+</li>
+
+<li><b>메모리 정리</b>: 사용하지 않는 텐서 정리
+<div class="code-block">
+<pre><code class="language-javascript">// 큰 배열 사용 후 수동 정리
+function processAudioData(audioData) {
+    try {
+        // 오디오 데이터 처리
+        const result = processAudio(audioData);
+        return result;
+    } finally {
+        // 명시적 메모리 정리
+        audioData = null;
+        if (global.gc) {
+            global.gc(); // Node.js의 경우
+        }
+    }
+}</code></pre>
+</div>
+</li>
+</ol>
+
+<h3 id="speed-optimization">속도 최적화</h3>
+
+<ol>
+<li><b>추론 스텝 조정</b>: 품질과 속도 균형
+<div class="code-block">
+<pre><code class="language-javascript">// 빠른 음성 생성 (품질 약간 감소)
+ttsEngine.config.totalSteps = 3;
+
+// 고품질 음성 생성 (속도 감소)
+ttsEngine.config.totalSteps = 7;
+
+// 기본 설정 (권장)
+ttsEngine.config.totalSteps = 5;</code></pre>
+</div>
+</li>
+
+<li><b>텍스트 청킹</b>: 긴 텍스트를 여러小块로 분할
+<div class="code-block">
+<pre><code class="language-javascript">// 긴 텍스트 자동 분할
+function chunkText(text, maxLen = 300) {
+    const sentences = text.split(/[.!?]+/);
+    const chunks = [];
+    let currentChunk = '';
+    
+    for (const sentence of sentences) {
+        if (currentChunk.length + sentence.length > maxLen) {
+            if (currentChunk) chunks.push(currentChunk);
+            currentChunk = sentence;
+        } else {
+            currentChunk += (currentChunk ? '. ' : '') + sentence;
+        }
+    }
+    
+    if (currentChunk) chunks.push(currentChunk);
+    return chunks;
+}</code></pre>
+</div>
+</li>
+</ol>
+
+<h2 id="comparison-analysis">📊 다른 TTS 솔루션과의 비교</h2>
+
+<div style="overflow-x: auto;">
+<table class="performance-table">
+<thead>
+<tr>
+<th>비교 항목</th>
+<th>Supertonic TTS</th>
+<th>클라우드 TTS (Google/Azure)</th>
+<th>Web Speech API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>처리 방식</b></td>
+<td>온디바이스</td>
+<td>서버 기반</td>
+<td>브라우저 내장</td>
+</tr>
+<tr>
+<td><b>속도</b></td>
+<td>⚡ 매우 빠름 (1-3초)</td>
+<td>🌐 네트워크 의존 (3-10초)</td>
+<td>⚡ 빠름 (1-2초)</td>
+</tr>
+<tr>
+<td><b>음성 품질</b></td>
+<td>🎯 최상급</td>
+<td>🎯 상급</td>
+<td>🎯 중급</td>
+</tr>
+<tr>
+<td><b>개인정보</b></td>
+<td>🔒 완전 보호</td>
+<td>⚠️ 서버 전송</td>
+<td>🔒 완전 보호</td>
+</tr>
+<tr>
+<td><b>비용</b></td>
+<td>💰 완전 무료</td>
+<td>💸 API 비용</td>
+<td>💰 무료</td>
+</tr>
+<tr>
+<td><b>언어 지원</b></td>
+<td>🌍 제한적</td>
+<td>🌍 가장 다양</td>
+<td>🌍 제한적</td>
+</tr>
+<tr>
+<td><b>오프라인</b></td>
+<td>✅ 지원</td>
+<td>❌ 불가</td>
+<td>✅ 지원</td>
+</tr>
+<tr>
+<td><b>WebGPU 지원</b></td>
+<td>✅ 최신 GPU 가속</td>
+<td>❌ 서버 의존</td>
+<td>❌ 해당 없음</td>
+</tr>
+<tr>
+<td><b>브라우저 호환</b></td>
+<td>✅ 모던 브라우저</td>
+<td>✅ 전부</td>
+<td>✅ 전부</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="best-practices">💡 베스트 프랙티스와 권장사항</h2>
+
+<h3 id="development-guidelines">개발 가이드라인</h3>
+
+<div class="info">
+💡 <b>중요한 권장사항</b>: Supertonic TTS를 프로덕션 환경에서 사용할 때 다음 사항들을 반드시 고려하세요:
+</div>
+
+<ol>
+<li><b>에러 핸들링</b>: Web Speech API를 폴백으로 사용
+<div class="code-block">
+<pre><code class="language-javascript">async function robustTextToSpeech(text) {
+    try {
+        // Supertonic TTS 시도
+        return await supersonicTTS.speak(text);
+    } catch (error) {
+        console.warn('Supertonic TTS 실패, Web Speech API 폴백:', error);
+        
+        // Web Speech API 폴백
+        if ('speechSynthesis' in window) {
+            return new Promise((resolve, reject) => {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9;
+                
+                utterance.onend = () => resolve(true);
+                utterance.onerror = (e) => reject(e.error);
+                
+                speechSynthesis.speak(utterance);
+            });
+        }
+        
+        throw error;
+    }
+}</code></pre>
+</div>
+</li>
+
+<li><b>사용자 경험 개선</b>: 로딩 상태와 진행 상황 표시
+<div class="code-block">
+<pre><code class="language-javascript">// 진행 상황 콜백 사용
+await ttsEngine.speak(text, {
+    progressCallback: (current, total) => {
+        const progress = Math.round((current / total) * 100);
+        updateProgressBar(progress);
+        updateStatusText(`음성 생성 중... ${progress}%`);
+    }
+});</code></pre>
+</div>
+</li>
+
+<li><b>브라우저 지원</b>: 기능 감지 및 대체 방안 제공
+<div class="code-block">
+<pre><code class="language-javascript">// 기능 지원 확인
+function checkBrowserSupport() {
+    const support = {
+        onnx: !!window.ort,
+        webAudio: !!window.AudioContext,
+        webSpeech: 'speechSynthesis' in window,
+        webGPU: 'gpu' in navigator
+    };
+    
+    if (!support.onnx || !support.webAudio) {
+        console.warn('Supertonic TTS를 지원하지 않는 브라우저입니다.');
+        showFallbackOption();
+    }
+    
+    return support;
+}</code></pre>
+</div>
+</li>
+</ol>
+
+<h3 id="production-considerations">프로덕션 고려사항</h3>
+
+<ul>
+<li><b>모델 최적화</b>: 필요한 모델만 로드하여 메모리 사용량 최소화</li>
+<li><b>CDN 활용</b>: 모델 파일을 CDN에서 로드하여 다운로드 속도 향상</li>
+<li><b>로컬 스토리지</b>: 모델을 로컬에 캐시하여 재사용</li>
+<li><b>모니터링</b>: 성능 지표와 오류율 추적</li>
+</ul>
+
+<h2 id="troubleshooting">🔧 문제 해결 가이드</h2>
+
+<h3 id="debugging-tips">디버깅 팁</h3>
+
+<div class="tip">
+💡 <b>유용한 디버깅 방법</b>: 콘솔에서 다음 명령어로 TTS 상태를 확인할 수 있습니다:
+</div>
+
+<div class="code-block">
+<pre><code class="language-javascript">// TTS 엔진 상태 확인
+console.log('모델 로딩 상태:', ttsEngine.modelLoaded);
+console.log('현재 음성 스타일:', ttsEngine.config.voiceStyle);
+console.log('AudioContext 상태:', ttsEngine.audioContext?.state);
+
+// 모델 정보 출력
+console.log('모델 설정:', ttsEngine.cfgs);
+console.log('현재 스타일 텐서 형태:', {
+    ttl: ttsEngine.currentStyle?.ttl?.dims,
+    dp: ttsEngine.currentStyle?.dp?.dims
+});</code></pre>
+</div>
+
+<h3 id="common-error-codes">흔한 오류 코드</h3>
+
+<table class="performance-table">
+<thead>
+<tr>
+<th>오류 메시지</th>
+<th>원인</th>
+<th>해결 방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>input 'style_dp' is missing</code></td>
+<td>스타일 텐서 형태 오류</td>
+<td>ONNX 텐서 형태로 변환 확인</td>
+</tr>
+<tr>
+<td><code>AudioContext was not allowed</code></td>
+<td>사용자 상호작용 없음</td>
+<td>사용자 클릭 후 AudioContext.resume()</td>
+</tr>
+<tr>
+<td><code>Model file not found</code></td>
+<td>모델 파일 경로 오류</td>
+<td>파일 경로와 CORS 정책 확인</td>
+</tr>
+<tr>
+<td><code>Out of memory</code></td>
+<td>메모리 부족</td>
+<td>브라우저 재시작 또는 탭 최소화</td>
+</tr>
+<tr>
+<td><code>WebGPU not available</code></td>
+<td>WebGPU 지원 안됨</td>
+<td>WebAssembly로 자동 폴백됨</td>
+</tr>
+</tbody>
+</table>
+
+<h2 id="conclusion">🎯 결론과 향후 발전 방향</h2>
+
+<div class="concept-block">
+<b>Supertonic TTS</b>는 브라우저 기반 AI 음성 기술의 새로운 표준을 제시하고 있습니다. 온디바이스 처리의 이점인 프라이버시 보호, 응답 속도, 비용 절감을 모두 달성하면서도 최고 수준의 음성 품질을 제공합니다.
+</div>
+
+<h3 id="key-benefits">주요 장점 요약</h3>
+<ul>
+<li><b>완전한 프라이버시</b>: 데이터가 기기를 벗어나지 않음</li>
+<li><b>극상 속도</b>: 네트워크 대기 없는 즉석 처리</li>
+<li><b>비용 효율성</b>: API 호출 비용 완전 제거</li>
+<li><b>안정성</b>: 네트워크 오류에 영향을 받지 않음</li>
+<li><b>WebGPU 가속</b>: 최신 GPU 하드웨어 활용</li>
+</ul>
+
+<h3 id="future-outlook">향후 발전 방향</h3>
+
+<div class="info">
+💡 <b>예상되는 발전 방향</b>: 브라우저의 AI 처리 능력 향상과 함께 더 많은 AI 모델들이 온디바이스로 이동할 것입니다. Supertonic TTS는 이러한 흐름의 선도적 기술로, 개발자들이 반드시 주목해야 할 핵심 솔루션입니다.
+</div>
+
+<ul>
+<li><b>더 많은 음성 스타일</b>: 다양한 언어와 음성 특성 지원</li>
+<li><b>향상된 모델 효율성</b>: 더 작은 모델로 더 나은 품질</li>
+<li><b>웹 표준 채택</b>: 더 많은 브라우저의 네이티브 지원</li>
+<li><b>확장된 API</b>: 더 많은 커스터마이징 옵션</li>
+<li><b>실시간 음성 변환</b>: 스트리밍 기반의 실시간 처리</li>
+</ul>
+
+Supertonic TTS는 브라우저에서 AI 음성 기술의 가능성을 실질적으로 증명했습니다. 여러분도 이 가이드를 참고하여 온디바이스 AI 음성 시스템 구축에 도전해보시기 바랍니다. 더 나은 사용자 경험과 개인정보 보호를 동시에 달성하는 것이 가능합니다!
+
+---
+
+<p><b>키워드</b>: Supertonic TTS, 브라우저 TTS, 온디바이스 AI, 음성 합성, 웹 오디오, ONNX, 텍스트 음성 변환, 실시간 음성 처리, WebGPU, WebAssembly</p>
+
+<script>
+// 코드블록 접기/펼치기 기능
+document.addEventListener('DOMContentLoaded', function() {
+    const codeBlocks = document.querySelectorAll('.code-block');
+    
+    codeBlocks.forEach(function(block, index) {
+        const preElement = block.querySelector('pre');
+        
+        if (preElement) {
+            const blockHeight = preElement.offsetHeight;
+            
+            // 300px 이상인 코드 블록에만 기능 적용
+            if (blockHeight > 300) {
+                block.classList.add('collapsed');
+                
+                // 페이드 오버레이 추가
+                const fadeOverlay = document.createElement('div');
+                fadeOverlay.className = 'code-fade-overlay';
+                block.appendChild(fadeOverlay);
+                
+                // 토글 버튼 추가
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'code-toggle-btn';
+                toggleBtn.setAttribute('data-block-index', index);
+                block.appendChild(toggleBtn);
+                
+                // 클릭 이벤트 리스너 추가
+                toggleBtn.addEventListener('click', function() {
+                    toggleCodeBlock(block);
+                });
+            }
+        }
+    });
+    
+    function toggleCodeBlock(block) {
+        const isCollapsed = block.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            block.classList.remove('collapsed');
+            block.classList.add('expanded');
+        } else {
+            block.classList.remove('expanded');
+            block.classList.add('collapsed');
+        }
+    }
+});
+
+// 데모 기능 구현 (실제 동작하지 않는 시각적 예제)
+document.addEventListener('DOMContentLoaded', function() {
+    // 데모 컨테이너의 UI 요소들
+    const voiceStyleSelect = document.getElementById('voiceStyleSelect');
+    const voiceStyleInfo = document.getElementById('voiceStyleInfo');
+    const totalStepInput = document.getElementById('totalStep');
+    const speedInput = document.getElementById('speed');
+    const generateBtn = document.getElementById('generateBtn');
+    const statusText = document.getElementById('statusText');
+    const backendBadge = document.getElementById('backendBadge');
+    const resultsContainer = document.getElementById('results');
+    const errorBox = document.getElementById('error');
+    
+    function showStatus(message, type = 'info') {
+        statusText.innerHTML = message;
+        const statusBox = document.getElementById('statusBox');
+        statusBox.className = 'status-box';
+        if (type === 'success') {
+            statusBox.classList.add('success');
+        } else if (type === 'error') {
+            statusBox.classList.add('error');
+        }
+    }
+    
+    function showError(message) {
+        errorBox.textContent = message;
+        errorBox.style.display = 'block';
+    }
+    
+    function hideError() {
+        errorBox.style.display = 'none';
+    }
+    
+    function showBackendBadge() {
+        backendBadge.classList.add('visible');
+    }
+    
+    // 음성 생성 시뮬레이션
+    generateBtn.addEventListener('click', async function() {
+        const text = document.getElementById('text').value.trim();
+        
+        if (!text) {
+            showError('텍스트를 입력하세요.');
+            return;
+        }
+        
+        try {
+            generateBtn.disabled = true;
+            hideError();
+            
+            // 결과 영역에 생성 중 표시
+            resultsContainer.innerHTML = `
+                <div class="results-placeholder generating">
+                    <div class="results-placeholder-icon">⏳</div>
+                    <p>음성 생성 중...</p>
+                </div>
+            `;
+            
+            showStatus('ℹ️ <strong>음성 생성 시뮬레이션...</strong>');
+            
+            // 2초 후 결과 표시 (실제 동작 아님)
+            setTimeout(() => {
+                const audioDurationSec = (Math.random() * 3 + 2).toFixed(2);
+                const totalTimeSec = (Math.random() * 2 + 1).toFixed(2);
+                
+                resultsContainer.innerHTML = `
+                    <div class="result-item">
+                        <div class="result-text-container">
+                            <div class="result-text-label">입력 텍스트</div>
+                            <div class="result-text">${text}</div>
+                        </div>
+                        <div class="result-info">
+                            <div class="info-item">
+                                <span>📊 오디오 길이</span>
+                                <strong>${audioDurationSec}s</strong>
+                            </div>
+                            <div class="info-item">
+                                <span>⏱️ 생성 시간</span>
+                                <strong>${totalTimeSec}s</strong>
+                            </div>
+                        </div>
+                        <div class="result-player">
+                            <audio controls>
+                                <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVrfDbF2BjIivrJBhNjVrfDbF2" type="audio/wav">
+                            </audio>
+                        </div>
+                        <div class="result-actions">
+                            <button onclick="alert('실제 데모가 아닙니다. Supertonic TTS를 직접 구현해보세요!')">
+                                <span>⬇️</span>
+                                <span>WAV 다운로드 (예제)</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                showStatus('✅ <strong>음성 생성 시뮬레이션 완료!</strong>', 'success');
+                generateBtn.disabled = false;
+            }, 2000);
+            
+        } catch (error) {
+            console.error('시뮬레이션 오류:', error);
+            showStatus(`❌ <strong>오류 발생:</strong> ${error.message}`, 'error');
+            showError(`오류 발생: ${error.message}`);
+            generateBtn.disabled = false;
+        }
+    });
+    
+    // 음성 스타일 선택 시뮬레이션
+    voiceStyleSelect.addEventListener('change', function(e) {
+        const selectedValue = e.target.value;
+        if (selectedValue) {
+            const filename = selectedValue.split('/').pop();
+            voiceStyleInfo.textContent = `${filename} (선택됨)`;
+        }
+    });
+    
+    // 초기 상태 설정
+    showStatus('ℹ️ <strong>데모 준비 완료</strong> 실제 구현은 가이드를 참고하세요.', 'success');
+    showBackendBadge();
+    backendBadge.textContent = 'WebGPU';
+    backendBadge.classList.add('webgpu');
+});
+</script>

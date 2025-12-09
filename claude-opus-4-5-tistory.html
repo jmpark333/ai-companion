@@ -1,0 +1,403 @@
+<!-- SEO 최적화 메타 태그 -->
+<div>
+<style>
+/* AI 기술 블로그 표준 스타일 */
+body {
+  font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #333;
+}
+p {
+    margin-bottom: 1.2em;
+    word-break: keep-all;
+}
+h2 {
+  border-bottom: 2px solid #0066cc;
+  padding-bottom: 10px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #0066cc;
+}
+h3 {
+    font-size: 1.2em;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e6f2ff;
+    padding-bottom: 5px;
+    color: #0066cc;
+}
+.concept-block {
+    background-color: #f0f8ff;
+    border-left: 4px solid #0066cc;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+}
+.code-block {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.code-block.collapsed {
+    max-height: 200px;
+}
+
+.code-block.expanded {
+    max-height: none;
+}
+
+.code-toggle-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(0, 102, 204, 0.8);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.code-toggle-btn:hover {
+    background-color: rgba(0, 102, 204, 1);
+}
+
+.code-block.collapsed .code-toggle-btn::after {
+    content: "펼치기 ▼";
+}
+
+.code-block.expanded .code-toggle-btn::after {
+    content: "접기 ▲";
+}
+
+.code-fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, #f5f5f5);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.code-block.expanded .code-fade-overlay {
+    opacity: 0;
+}
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 16px;
+  text-align: center;
+}
+.performance-table th, .performance-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+.performance-table th {
+  background-color: #0066cc;
+  color: white;
+  font-weight: bold;
+}
+.performance-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.ai-tech {
+  background-color: #e6f3ff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #0066cc;
+}
+.warning {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 15px;
+    margin: 20px 0;
+}
+.info {
+    background-color: #d1ecf1;
+    border-left: 5px solid #17a2b8;
+    padding: 15px;
+    margin: 20px 0;
+}
+</style>
+</div>
+<p data-ke-size="size16">AI 기술의 패러다임이 다시 한번 바뀌고 있습니다. Anthropic이 최근 출시한 Claude Opus 4.5는 단순한 성능 향상을 넘어, 개발자의 작업 방식을 근본적으로 변화시킬 혁신적인 모델입니다. 코딩, 에이전트, 컴퓨터 사용 분야에서 세계 최고 수준의 성능을 자랑하며, AI가 할 수 있는 일의 한계를 새롭게 정의하고 있습니다.</p>
+<h2 id="introduction" data-ke-size="size26">🤖 Claude Opus 4.5 소개</h2>
+<p data-ke-size="size16">Anthropic이 오늘 출시한 <span class="ai-tech">Claude Opus 4.5</span>는 지능적이고 효율적인 최신 모델로, <b>코딩, 에이전트, 컴퓨터 사용 분야</b>에서 현재 세계 최고 수준의 성능을 자랑합니다. 이 모델은 깊은 연구, 슬라이드 및 스프레드시트 작업과 같은 일상적인 작업에서도 의미 있는 개선을 보여주며, AI 시스템이 할 수 있는 일의 한계를 확장하고 업무 방식의 더 큰 변화를 예고합니다. 이는 단순한 성능 향상을 넘어선, 개발자들이 더 효율적으로 작업하고, 더 복잡한 문제를 해결하며, 더 창의적인 솔루션을 개발할 수 있도록 돕는 중요한 이정표입니다.</p>
+<p>[##_Image|kage@NmAg3/dJMcacVP0el/AAAAAAAAAAAAAAAAAAAAANuF02rq8zJlgQDOExI2rErzKm05OLIlyTVNeU5w4owC/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=iL%2F0TEgc2GPdRdXrHuH8Ehm3kPg%3D|CDM|1.3|{"originWidth":859,"originHeight":369,"style":"alignCenter","caption":"🚀 Claude Opus 4.5 출시: 코딩, 에이전트, 컴퓨터 사용의 새로운 기준"}_##]</p>
+<div class="concept-block">
+<p data-ke-size="size16">Claude Opus 4.5는 실제 소프트웨어 엔지니어링 테스트에서 최고 수준의 성능을 보여주며, 개발자들에게 <b>$5/$25 per million tokens</b>라는 경쟁력 있는 가격으로 Opus급 기능을 제공합니다. 이를 통해 더 많은 사용자, 팀, 기업이 최고 수준의 AI 기능에 접근할 수 있게 되었습니다.</p>
+</div>
+<p data-ke-size="size16"><a href="https://www.anthropic.com/news/claude-opus-4-5" target="_blank" rel="noopener&nbsp;noreferrer">https://www.anthropic.com/news/claude-opus-4-5</a></p>
+<figure id="og_1764029617802" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="website" data-og-title="Introducing Claude Opus 4.5" data-og-description="Anthropic is an AI safety and research company that's working to build reliable, interpretable, and steerable AI systems." data-og-host="www.anthropic.com" data-og-source-url="https://www.anthropic.com/news/claude-opus-4-5" data-og-url="https://www.anthropic.com/news/claude-opus-4-5" data-og-image="https://scrap.kakaocdn.net/dn/dank9E/hyZODJqWsi/O5zR3QD3geAN0lrjqsW7q1/img.png?width=1900&amp;height=1000&amp;face=0_0_1900_1000,https://scrap.kakaocdn.net/dn/bprMbA/hyZOjLfUAP/c48IgWtE13AvVY1K1w2uek/img.png?width=1900&amp;height=1000&amp;face=0_0_1900_1000,https://scrap.kakaocdn.net/dn/bIwKNA/hyZNGOw3qo/AWUirWlCLQZJ4tRhjv6ulK/img.jpg?width=3840&amp;height=2160&amp;face=0_0_3840_2160"><a href="https://www.anthropic.com/news/claude-opus-4-5" target="_blank" rel="noopener" data-source-url="https://www.anthropic.com/news/claude-opus-4-5">
+<div class="og-image" style="background-image: url('https://scrap.kakaocdn.net/dn/dank9E/hyZODJqWsi/O5zR3QD3geAN0lrjqsW7q1/img.png?width=1900&amp;height=1000&amp;face=0_0_1900_1000,https://scrap.kakaocdn.net/dn/bprMbA/hyZOjLfUAP/c48IgWtE13AvVY1K1w2uek/img.png?width=1900&amp;height=1000&amp;face=0_0_1900_1000,https://scrap.kakaocdn.net/dn/bIwKNA/hyZNGOw3qo/AWUirWlCLQZJ4tRhjv6ulK/img.jpg?width=3840&amp;height=2160&amp;face=0_0_3840_2160');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Introducing Claude Opus 4.5</p>
+<p class="og-desc" data-ke-size="size16">Anthropic is an AI safety and research company that's working to build reliable, interpretable, and steerable AI systems.</p>
+<p class="og-host" data-ke-size="size16">www.anthropic.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">
+<script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3799985281132996"></script>
+<!-- 수평형 --></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">
+<script>     (adsbygoogle = window.adsbygoogle || []).push({});</script>
+</p>
+<h2 id="performance" data-ke-size="size26">📈 성능 벤치마크 및 평가</h2>
+<p data-ke-size="size16">Claude Opus 4.5는 다양한 평가 지표에서 이전 모델들을 뛰어넘는 성능을 보여줍니다.</p>
+<p>[##_Image|kage@lxmqA/dJMcacuLNmY/AAAAAAAAAAAAAAAAAAAAAMiJJYHlVdQqgRjw_24k72DBBxEAatT6pODv45zw0UVs/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=24ZTfygdwORs%2B7jYFB%2BsEHhV1DE%3D|CDM|1.3|{"originWidth":1280,"originHeight":720,"style":"alignCenter","caption":"Claude Opus 4.5 벤치마크 결과","filename":"blob"}_##]</p>
+<div style="overflow-x: auto;">
+<table class="performance-table" data-ke-align="alignLeft">
+<thead>
+<tr>
+<th>평가 영역</th>
+<th>주요 개선사항</th>
+<th>성능 향상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>소프트웨어 엔지니어링</td>
+<td>SWE-bench Verified</td>
+<td><b>최고 수준 기록</b></td>
+</tr>
+<tr>
+<td>토큰 효율성</td>
+<td>동일 문제 해결 시 토큰 사용량</td>
+<td><b>최대 65% 감소</b></td>
+</tr>
+<tr>
+<td>에이전트 성능</td>
+<td>Terminal Bench</td>
+<td><b>Sonnet 4.5 대비 15% 향상</b></td>
+</tr>
+<tr>
+<td>프롬프트 인젝션 방지</td>
+<td>강력한 공격에 대한 저항성</td>
+<td><b>업계 최고 수준</b></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>[##_Image|kage@biVueu/dJMcacuLNRS/AAAAAAAAAAAAAAAAAAAAABergHODW3czHpx6JtYHQ_sp-pVgQxNqjzscay9l_tIx/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=3ycJh4H5canodC%2Bd38qBfmOoj4g%3D|CDM|1.3|{"originWidth":1280,"originHeight":1100,"style":"alignCenter","caption":"Claude Opus 4.5 SWE-bench Multilingual 벤치마크 결과","filename":"blob"}_##]</p>
+<figure class="ad-wp" contenteditable="false" data-ke-type="revenue" data-ad-vendor="adsense" data-ad-id-pc="329667" data-ad-id-mobile="329670"></figure>
+<h3 data-ke-size="size23">인간 전문가 능가하는 성능</h3>
+<p data-ke-size="size16">Anthropic은 잠재적 성능 엔지니어링 후보자들에게 매우 어려운 테이크홈 시험을 제공합니다. Claude Opus 4.5는 정해진 2시간 시간 제한 내에서 지금까지의 어떤 인간 후보보다도 높은 점수를 기록했습니다. 이 결과는 AI가 엔지니어링이라는 직업을 어떻게 변화시킬지에 대한 질문을 제기합니다.</p>
+<p>[##_Image|kage@wk9lz/dJMcaf56elI/AAAAAAAAAAAAAAAAAAAAAIw3qFVaPV9c0e5Y5TytUatIZUta0PGnu410c29f8cPc/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=w2NcaZkb1Wu3LmCHOuZtaZIlPdM%3D|CDM|1.3|{"originWidth":1280,"originHeight":720,"style":"alignCenter","caption":"Claude Opus 4.5 다국어 코딩 벤치마크 결과","filename":"blob"}_##]</p>
+<h2 id="features" data-ke-size="size26">💡 주요 기능 및 혁신</h2>
+<h3 data-ke-size="size23">Effort 파라미터</h3>
+<p data-ke-size="size16">새로운 <b>Effort 파라미터</b>를 통해 개발자들은 <b>시간과 비용을 최소화하거나 기능을 최대화</b>할 수 있습니다.</p>
+<div class="code-block">
+<pre class="json"><code>// Claude API에서 Effort 파라미터 사용 예시
+{
+  "model": "claude-opus-4-5-20251101",
+  "max_tokens": 4096,
+  "effort": "medium" // low, medium, high 중 선택
+}</code></pre>
+<button class="code-toggle-btn"></button>
+<div class="code-fade-overlay">&nbsp;</div>
+</div>
+<div class="info">
+<p data-ke-size="size16"><b>중간 Effort 레벨</b>에서 Opus 4.5는 Sonnet 4.5의 최고 SWE-bench Verified 점수와 동일한 성능을 내면서 <b>76% 더 적은 출력 토큰</b>을 사용합니다. 최고 Effort 레벨에서는 Sonnet 4.5 성능을 4.3퍼센트포인트 초과하면서 48% 더 적은 토큰을 사용합니다.</p>
+</div>
+<p>[##_Image|kage@kNiT7/dJMb99Y61s1/AAAAAAAAAAAAAAAAAAAAAMKx0bZvKFDJurT8lIrjsUHwylROS6MVNwUDXQcMLKtJ/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=UATuCZgrvn4pxsbfmJlU9WJksPU%3D|CDM|1.3|{"originWidth":1280,"originHeight":720,"style":"alignCenter","caption":"Claude Opus 4.5 effort-정확도 곡선","filename":"blob"}_##]</p>
+<p data-ke-size="size16"><a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener&nbsp;noreferrer">https://platform.claude.com/docs/en/build-with-claude/effort</a></p>
+<figure id="og_1764037287674" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="Effort" data-og-description="Control how many tokens Claude uses when responding with the effort parameter, trading off between response thoroughness and token efficiency." data-og-host="platform.claude.com" data-og-source-url="https://platform.claude.com/docs/en/build-with-claude/effort" data-og-url="https://platform.claude.com/docs/en/build-with-claude/effort" data-og-image="https://scrap.kakaocdn.net/dn/slezG/hyZOb9cSCI/QWRSnZzms52GSrSnXvFF5K/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/dVkPQs/hyZONFi2Sm/xrCIzWeSZpKEgqp7CF3bQk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630"><a href="https://platform.claude.com/docs/en/build-with-claude/effort" target="_blank" rel="noopener" data-source-url="https://platform.claude.com/docs/en/build-with-claude/effort">
+<div class="og-image" style="background-image: url('https://scrap.kakaocdn.net/dn/slezG/hyZOb9cSCI/QWRSnZzms52GSrSnXvFF5K/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/dVkPQs/hyZONFi2Sm/xrCIzWeSZpKEgqp7CF3bQk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Effort</p>
+<p class="og-desc" data-ke-size="size16">Control how many tokens Claude uses when responding with the effort parameter, trading off between response thoroughness and token efficiency.</p>
+<p class="og-host" data-ke-size="size16">platform.claude.com</p>
+</div>
+</a></figure>
+<h3 data-ke-size="size23">컨텍스트 관리 및 메모리</h3>
+<p data-ke-size="size16">Opus 4.5의 <b>컨텍스트 편집(Context Editting)</b> 기능은 개발자들이 대화 중간에 컨텍스트를 직접 수정하고 관리할 수 있게 해줍니다. 이는 장기 실행 작업에서 메모리 사용을 최적화하고 성능을 향상시키는 핵심 기능입니다.</p>
+<div class="concept-block">
+<p data-ke-size="size16"><b>컨텍스트 편집의 주요 특징:</b></p>
+<ul style="list-style-type: disc;" data-ke-size="size16" data-ke-list-type="disc">
+<li><b>실시간 수정</b>: 대화 중간에 이전 컨텍스트를 직접 편집 가능</li>
+<li><b>메모리 최적화</b>: 불필요한 정보를 제거하여 토큰 사용량 감소</li>
+<li><b>장기 작업 지원</b>: 긴 대화에서도 일관성 유지</li>
+</ul>
+</div>
+<p data-ke-size="size16"><a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener&nbsp;noreferrer">https://platform.claude.com/docs/en/build-with-claude/context-editing</a></p>
+<figure id="og_1764037349157" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="Context editing" data-og-description="Automatically manage conversation context as it grows with context editing." data-og-host="platform.claude.com" data-og-source-url="https://platform.claude.com/docs/en/build-with-claude/context-editing" data-og-url="https://platform.claude.com/docs/en/build-with-claude/context-editing" data-og-image="https://scrap.kakaocdn.net/dn/bnp9DV/hyZN7eDVbL/ZN7zz8QRCnkOa2Q6iesTyk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/Kw6qF/hyZOy2K4pO/62w6ySkPkONPZm6aokImfk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630"><a href="https://platform.claude.com/docs/en/build-with-claude/context-editing" target="_blank" rel="noopener" data-source-url="https://platform.claude.com/docs/en/build-with-claude/context-editing">
+<div class="og-image" style="background-image: url('https://scrap.kakaocdn.net/dn/bnp9DV/hyZN7eDVbL/ZN7zz8QRCnkOa2Q6iesTyk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/Kw6qF/hyZOy2K4pO/62w6ySkPkONPZm6aokImfk/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Context editing</p>
+<p class="og-desc" data-ke-size="size16">Automatically manage conversation context as it grows with context editing.</p>
+<p class="og-host" data-ke-size="size16">platform.claude.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">또한 <b>메모리 툴(Memory Tool)</b>을 통해 Claude는 이전 대화의 중요 정보를 기억하고 필요에 따라 검색할 수 있습니다. 이는 에이전트 작업에서 성능을 크게 향상시키며, 특히 하위 에이전트 팀을 관리하는 데 매우 효과적입니다.</p>
+<div class="code-block">
+<pre class="json"><code>// 컨텍스트 편집 기능 사용 예시
+const contextManager = {
+  editContext: function(conversationId, newContext) {
+    // 특정 대화의 컨텍스트 수정
+    return claude.editContext(conversationId, newContext);
+  },
+  
+  compressContext: function(conversation) {
+    // 긴 컨텍스트를 요약하여 토큰 절약
+    return claude.compressContext(conversation);
+  }
+};
+
+// 메모리 툴 사용 예시
+const memoryTool = {
+  storeImportant: function(key, information) {
+    // 중요 정보를 메모리에 저장
+    return claude.memory.store(key, information);
+  },
+  
+  retrieveRelevant: function(query) {
+    // 관련 정보를 메모리에서 검색
+    return claude.memory.search(query);
+  }
+};</code></pre>
+<button class="code-toggle-btn"></button>
+<div class="code-fade-overlay">&nbsp;</div>
+</div>
+<p data-ke-size="size16"><a href="https://platform.claude.com/docs/en/build-with-claude/context-editing#using-with-the-memory-tool" target="_blank" rel="noopener&nbsp;noreferrer">https://platform.claude.com/docs/en/build-with-claude/context-editing#using-with-the-memory-tool</a></p>
+<figure id="og_1764037371153" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="article" data-og-title="Context editing" data-og-description="Automatically manage conversation context as it grows with context editing." data-og-host="platform.claude.com" data-og-source-url="https://platform.claude.com/docs/en/build-with-claude/context-editing#using-with-the-memory-tool" data-og-url="https://platform.claude.com/docs/en/build-with-claude/context-editing" data-og-image="https://scrap.kakaocdn.net/dn/DmqrZ/hyZNIlj96R/RrxGBvdeEDbKlBHualwc00/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/Akw2y/hyZOzUANJy/X9XUnyNhKUBsCbmzC4axc0/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630"><a href="https://platform.claude.com/docs/en/build-with-claude/context-editing#using-with-the-memory-tool" target="_blank" rel="noopener" data-source-url="https://platform.claude.com/docs/en/build-with-claude/context-editing#using-with-the-memory-tool">
+<div class="og-image" style="background-image: url('https://scrap.kakaocdn.net/dn/DmqrZ/hyZNIlj96R/RrxGBvdeEDbKlBHualwc00/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630,https://scrap.kakaocdn.net/dn/Akw2y/hyZOzUANJy/X9XUnyNhKUBsCbmzC4axc0/img.png?width=1200&amp;height=630&amp;face=0_0_1200_630');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">Context editing</p>
+<p class="og-desc" data-ke-size="size16">Automatically manage conversation context as it grows with context editing.</p>
+<p class="og-host" data-ke-size="size16">platform.claude.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">이러한 기능들의 조합을 통해 <b>복잡하고 잘 조정된 멀티에이전트 시스템</b> 구축이 가능해지며, 특히 장기적인 프로젝트나 지속적인 대화가 필요한 작업에서 그 진가를 발휘합니다.</p>
+<h3 data-ke-size="size23">고급 도구 사용 능력</h3>
+<p data-ke-size="size16">Opus 4.5는 <b>프로그래매틱 도구 호출(Programmatic Tool Calling)</b>을 통해 코드 실행 환경에서 도구를 직접 호출할 수 있습니다. 이는 모델의 컨텍스트 창 부담을 줄이고, 복잡한 자동화 작업을 더 효율적으로 처리합니다.</p>
+<div class="concept-block">
+<p data-ke-size="size16"><b>프로그래매틱 도구 호출의 핵심 장점:</b></p>
+<ul data-ke-size="size16">
+<li><b>컨텍스트 최적화</b>: 불필요한 중간 결과 축적으로 토큰 사용량 감소</li>
+<li><b>루프 및 조건문</b>: 코드 기반 오케스트레이션으로 복잡한 논리 처리</li>
+<li><b>데이터 변환</b>: 효율적인 데이터 처리 및 변환 작업</li>
+</ul>
+</div>
+<h3 data-ke-size="size23">도구 검색 및 예제 기반 학습</h3>
+<p data-ke-size="size16"><b>도구 검색 툴(Tool Search Tool)</b>을 통해 Claude는 필요한 도구만 실시간으로 검색하고 로드할 수 있습니다. 이는 수백 개의 도구가 있는 환경에서도 컨텍스트 부담 없이 작업할 수 있게 합니다.</p>
+<div class="info">
+<p data-ke-size="size16"><b>실제 사례</b>: 5개 서버(GitHub, Slack, Sentry, Grafana, Splunk)에서 58개 도구가 약 55K 토큰을 소비했으나, 도구 검색 툴을 통해 <b>191,300 토큰을 절약</b>하는 효과를 보였습니다.</p>
+</div>
+<p data-ke-size="size16">또한 <b>도구 사용 예제(Tool Use Examples)</b>를 통해 Claude는 JSON 스키마뿐만 아니라 실제 사용 패턴과 모범 사례를 학습합니다. 이는 올바른 파라미터 조합과 사용 규칙을 익히는 데 도움이 됩니다.</p>
+<h3 data-ke-size="size23">멀티에이전트 지원</h3>
+<p data-ke-size="size16">Opus 4.5는 복잡한 워크플로우를 더 적은 단계로 해결할 수 있으며, 이는 더 적은 백트래킹, 더 적은 중복 탐색, 더 적은 장황한 추론으로 이어집니다. 테스트에서 이러한 기술들의 조합이 깊은 연구 평가에서 거의 15퍼센트포인트의 성능 향상을 가져왔습니다.</p>
+<p data-ke-size="size16">
+<script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3799985281132996"></script>
+<!-- 사각 디스플레이 광고 --></p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">
+<script>     (adsbygoogle = window.adsbygoogle || []).push({});</script>
+</p>
+<h2 id="safety" data-ke-size="size26">🔒 안전성 강화</h2>
+<p data-ke-size="size16">Claude Opus 4.5는 지금까지 출시된 모델 중 가장 견고하게 정렬된 모델이며, 아마도 어떤 개발자가 만든 최고 수준의 프론티어 모델일 것입니다.</p>
+<h3 data-ke-size="size23">프롬프트 인젝션 방지</h3>
+<p data-ke-size="size16">악의적인 해커나 사이버 범죄자들이 AI 모델을 조종하려는 공격에 직면했을 때, Claude가 훈련받은 안전장치와 <b>"스트리트 스마트"</b> 기능으로 이러한 위협을 효과적으로 방어할 수 있습니다.</p>
+<div class="info">
+<p data-ke-size="size16"><b>스트리트 스마트(Street Smarts)란?</b> 실제 세상의 경험과 지혜를 바탕으로 위험 상황을 판단하고 대처하는 능력을 의미합니다. AI 모델의 맥락에서는 사용자의 의도와 악의적인 공격을 구별하고, 기만적인 지시를 거부하며 안전한 방향으로 대화를 유도하는 지능적 방어 메커니즘을 말합니다.</p>
+</div>
+<p data-ke-size="size16">Opus 4.5는 <b>프롬프트 인젝션 방어 능력</b>에서 큰 진전을 이루었는데, 이는 해커가 악의적인 지시를 몰래 입력하여 모델을 조종하려는 공격을 의미합니다. 스트리트 스마트 기능을 통해 Claude는 이러한 공격을 더욱 정교하게 탐지하고 방어할 수 있습니다.</p>
+<h2 id="product-updates" data-ke-size="size26">📱 제품 업데이트 및 가이드</h2>
+<h3 data-ke-size="size23">Claude Code</h3>
+<p data-ke-size="size16">Claude Code는 Opus 4.5로 두 가지 업그레이드를 얻습니다. <b>Plan Mode</b>는 이제 더 정밀한 계획을 구축하고 더 철저하게 실행합니다. Claude는 명확화 질문을 먼저 한 다음, 실행하기 전에 사용자가 편집 가능한 plan.md 파일을 구축합니다.</p>
+<p data-ke-size="size16">Claude Code는 이제 데스크톱 앱에서도 사용 가능하며, 여러 <b>로컬 및 원격 세션을 병렬로 실행</b>할 수 있습니다. 예를 들어, 한 에이전트는 버그를 수정하고, 다른 하나는 GitHub를 연구하며, 세 번째는 문서를 업데이트할 수 있습니다.</p>
+<h3 style="color: #000000; text-align: start;" data-ke-size="size23">실용적 가이드</h3>
+<p style="color: #333333; text-align: start;" data-ke-size="size16">Claude Opus 4.5를 최대한 활용하기 위한 몇 가지 실용적 팁:</p>
+<pre id="code_1764030442947" class="bash" data-ke-language="bash" data-ke-type="codeblock"><code>// 1. Effort 파라미터 최적화 사용법
+const response = await claude.messages.create({
+  model: "claude-opus-4-5-20251101",
+  messages: messages,
+  max_tokens: 4096,
+  effort: "medium" // 비용 효율성을 위해 medium으로 설정
+});
+
+// 2. 컨텍스트 관리 최적화
+const contextManager = new ContextManager({
+  maxContextSize: 200000, // 200K 컨텍스트 창 활용
+  compactionStrategy: 'auto'
+});
+
+// 3. 멀티에이전트 작업 예시
+const agentTeam = await createAgentTeam([
+  { role: 'coder', task: 'implement_feature' },
+  { role: 'tester', task: 'test_implementation' },
+  { role: 'reviewer', task: 'code_review' }
+]);</code></pre>
+<p style="color: #333333; text-align: start;" data-ke-size="size16">이러한 기능들을 적극적으로 활용하여 개발 워크플로우를 최적화하고, 비용을 절감하며, 더 높은 품질의 결과물을 생산할 수 있습니다.<span>&nbsp;</span></p>
+<h2 id="conclusion" data-ke-size="size26">🎯 결론 및 전망</h2>
+<p data-ke-size="size16">Claude Opus 4.5는 AI 기술 발전의 중요한 이정표를 나타냅니다. 단순한 성능 향상을 넘어선, 개발자들이 더 효율적으로 작업하고, 더 복잡한 문제를 해결하며, 더 창의적인 솔루션을 개발할 수 있도록 돕습니다. 이러한 혁신은 AI 개발의 방향성을 제시하며, 미래 기술 발전의 기반이 될 것입니다.</p>
+<p data-ke-size="size16">&nbsp;</p>
+<p data-ke-size="size16">여러분도 Claude Opus 4.5의 혁신적인 기능들을 직접 경험해보시길 추천드립니다. 특히 <b>Effort 파라미터</b>를 활용한 비용 효율적인 개발, 향상된 <b>컨텍스트 관리</b>를 통한 장기 작업 처리, 그리고 <b>멀티에이전트 시스템 구축</b> 능력은 실제 개발 환경에서 큰 차이를 만들어낼 것입니다. 저는 다음 시간에 더 새로운 AI 기술 동향을 가지고 돌아오겠습니다. 감사합니다.</p>
+<hr data-ke-style="style1" />
+<p>[##_Image|kage@W1bvH/btsITTQ40zP/AAAAAAAAAAAAAAAAAAAAAIVsYCcuvLNDMvtkwVYQahtqkalWsrYiKkJcylO13C6w/img.png?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&amp;expires=1764514799&amp;allow_ip=&amp;allow_referer=&amp;signature=KnWZAUyzuF4M3AFHDmBisPMudDY%3D|CDM|1.3|{"originWidth":611,"originHeight":610,"style":"alignCenter","link":"https://www.buymeacoffee.com/jmpark333","title":"https://fornewchallenge.tistory.com/","caption":"https://fornewchallenge.tistory.com/"}_##]</p>
+<p data-ke-size="size16">
+<script>
+// 코드 블록 접기/펼치기 기능 구현
+document.addEventListener('DOMContentLoaded', function() {
+    const codeBlocks = document.querySelectorAll('.code-block');
+    
+    codeBlocks.forEach(function(block, index) {
+        const preElement = block.querySelector('pre');
+        
+        if (preElement) {
+            const blockHeight = preElement.offsetHeight;
+            
+            // 300px 이상인 코드 블록에만 기능 적용
+            if (blockHeight > 300) {
+                block.classList.add('collapsed');
+                
+                // 페이드 오버레이 추가
+                const fadeOverlay = document.createElement('div');
+                fadeOverlay.className = 'code-fade-overlay';
+                block.appendChild(fadeOverlay);
+                
+                // 토글 버튼 추가
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'code-toggle-btn';
+                toggleBtn.setAttribute('data-block-index', index);
+                block.appendChild(toggleBtn);
+                
+                // 클릭 이벤트 리스너 추가
+                toggleBtn.addEventListener('click', function() {
+                    toggleCodeBlock(block);
+                });
+            }
+        }
+    });
+    
+    function toggleCodeBlock(block) {
+        const isCollapsed = block.classList.contains('collapsed');
+        
+        if (isCollapsed) {
+            block.classList.remove('collapsed');
+            block.classList.add('expanded');
+        } else {
+            block.classList.remove('expanded');
+            block.classList.add('collapsed');
+        }
+    }
+});
+</script>
+</p>

@@ -1,0 +1,548 @@
+<div>
+<style>
+/* AI 기술 블로그 표준 스타일 */
+body {
+  font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #333;
+}
+p {
+    margin-bottom: 1.2em;
+    word-break: keep-all;
+}
+h2 {
+  border-bottom: 2px solid #0066cc;
+  padding-bottom: 10px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-weight: bold;
+  color: #0066cc;
+}
+h3 {
+    font-size: 1.2em;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e6f2ff;
+    padding-bottom: 5px;
+    color: #0066cc;
+}
+.concept-block {
+    background-color: #f0f8ff;
+    border-left: 4px solid #0066cc;
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 0 8px 8px 0;
+}
+.code-block {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px 0;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.code-block.collapsed {
+    max-height: 200px;
+}
+
+.code-block.expanded {
+    max-height: none;
+}
+
+.code-toggle-btn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(0, 102, 204, 0.8);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 10;
+    transition: background-color 0.3s ease;
+}
+
+.code-toggle-btn:hover {
+    background-color: rgba(0, 102, 204, 1);
+}
+
+.code-block.collapsed .code-toggle-btn::after {
+    content: "펼치기 ▼";
+}
+
+.code-block.expanded .code-toggle-btn::after {
+    content: "접기 ▲";
+}
+
+.code-fade-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, #f5f5f5);
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.code-block.expanded .code-fade-overlay {
+    opacity: 0;
+}
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 16px;
+  text-align: center;
+}
+.performance-table th, .performance-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+.performance-table th {
+  background-color: #0066cc;
+  color: white;
+  font-weight: bold;
+}
+.performance-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.ai-tech {
+  background-color: #e6f3ff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: #0066cc;
+}
+.warning {
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 15px;
+    margin: 20px 0;
+}
+.info {
+    background-color: #d1ecf1;
+    border-left: 5px solid #17a2b8;
+    padding: 15px;
+    margin: 20px 0;
+}
+
+/* 중앙 문단 핵심문장 음영 애니메이션: 스킨에서 공통 제공. 개별 문서에 추가 금지. */
+</style>
+</div>
+<div class="concept-block"><b>Supertonic TTS</b>는 브라우저에서 직접 실행되는 고품질 텍스트 음성 변환(Text-to-Speech) 라이브러리입니다. 기존의 클라우드 기반 TTS와 달리, <b>온디바이스(on-device)</b>로 작동하여 개인정보 보호와 실시간 성능을 모두 달성한 혁신적인 AI 음성 기술입니다.</div>
+<h3 id="key-features" data-ke-size="size23">🎯 주요 특징</h3>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>온디바이스 실행</b>: 서버 없이 브라우저에서 직접 처리</li>
+<li><b>Lightning Fast</b>: 기존 TTS보다 10배 빠른 처리 속도</li>
+<li><b>고품질 출력</b>: 실제 사람과 구분되지 않는 자연스러운 음성</li>
+<li><b>프라이버시 보장</b>: 텍스트가 외부로 전송되지 않음</li>
+<li><b>플랫폼 독립적</b>: 모든 주요 브라우저에서 동작</li>
+</ul>
+<h2 id="implementation-story" data-ke-size="size26">💡 구현 과정: 실제 프로젝트 경험담</h2>
+<p data-ke-size="size16">최근 AI 컴패니온 프로젝트에서 Supertonic TTS를 성공적으로 구현한 경험을 바탕으로, 실무에서 마주친 실제 문제들과 해결 과정을 상세히 공유합니다.</p>
+<h3 id="git-lfs-problem" data-ke-size="size23">초기 설정 문제: Git LFS 대용량 파일</h3>
+<div class="warning">⚠️ 첫 번째 마주친 문제는 Git 저장소에 100MB를 초과하는 ONNX 모델 파일들이었습니다.
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li>vocoder.onnx: 96.73 MB</li>
+<li>vector_estimator.onnx: 126.38 MB</li>
+</ul>
+</div>
+<p data-ke-size="size16"><b>해결 과정:</b></p>
+<div class="code-block">
+<pre class="x86asm"><code># Git LFS 초기화 및 설정
+git lfs install
+git lfs track "*.onnx"
+
+# 기존 파일들을 LFS로 마이그레이션
+git lfs migrate import --include="*.onnx" --everything
+
+# 성공적으로 104개 커밋을 LFS로 변환하여 GitHub에 Push 완료</code></pre>
+</div>
+<h3 id="onnx-implementation" data-ke-size="size23">ONNX 모델 구현: 공식 예제 분석</h3>
+<p data-ke-size="size16">공식 GitHub 리포지토리인 <a title="Supertonic 공식 리포지토리" href="https://github.com/supertone-inc/supertonic">supertone-inc/supertonic</a>에서 브라우저 예제를 분석하여 구현했습니다.</p>
+<p data-ke-size="size16"><a href="https://github.com/supertone-inc/supertonic/tree/main/web" target="_blank" rel="noopener&nbsp;noreferrer">https://github.com/supertone-inc/supertonic/tree/main/web</a></p>
+<figure id="og_1764023194455" contenteditable="false" data-ke-type="opengraph" data-ke-align="alignCenter" data-og-type="object" data-og-title="supertonic/web at main &middot; supertone-inc/supertonic" data-og-description="Lightning-fast, on-device TTS &mdash; running natively via ONNX. - supertone-inc/supertonic" data-og-host="github.com" data-og-source-url="https://github.com/supertone-inc/supertonic/tree/main/web" data-og-url="https://github.com/supertone-inc/supertonic/tree/main/web" data-og-image="https://scrap.kakaocdn.net/dn/Nfd5V/hyZOctpIjp/mnp6jDlA0zY0zRx7LycgxK/img.png?width=1200&amp;height=600&amp;face=0_0_1200_600,https://scrap.kakaocdn.net/dn/83KGS/hyZNzomizd/2cC6YEvalKd3pEoM9A7ufK/img.png?width=1200&amp;height=600&amp;face=0_0_1200_600"><a href="https://github.com/supertone-inc/supertonic/tree/main/web" target="_blank" rel="noopener" data-source-url="https://github.com/supertone-inc/supertonic/tree/main/web">
+<div class="og-image" style="background-image: url('https://scrap.kakaocdn.net/dn/Nfd5V/hyZOctpIjp/mnp6jDlA0zY0zRx7LycgxK/img.png?width=1200&amp;height=600&amp;face=0_0_1200_600,https://scrap.kakaocdn.net/dn/83KGS/hyZNzomizd/2cC6YEvalKd3pEoM9A7ufK/img.png?width=1200&amp;height=600&amp;face=0_0_1200_600');">&nbsp;</div>
+<div class="og-text">
+<p class="og-title" data-ke-size="size16">supertonic/web at main &middot; supertone-inc/supertonic</p>
+<p class="og-desc" data-ke-size="size16">Lightning-fast, on-device TTS &mdash; running natively via ONNX. - supertone-inc/supertonic</p>
+<p class="og-host" data-ke-size="size16">github.com</p>
+</div>
+</a></figure>
+<p data-ke-size="size16">&nbsp;</p>
+<div class="code-block">
+<pre class="kotlin"><code>/**
+ * Supertonic TTS 핵심 클래스 구조 (공식 예제 기반)
+ */
+class SupertonicTTS {
+    constructor() {
+        this.textToSpeech = null;
+        this.cfgs = null;
+        this.currentStyle = null;
+        this.modelLoaded = false;
+        this.config = {
+            totalSteps: 5,      // 추론 스텝 수
+            speed: 1.05,        // 음성 속도
+            voiceStyle: 'F1'    // 음성 스타일
+        };
+    }
+
+    // ONNX 모델 초기화
+    async initialize() {
+        const result = await this.loadModels(this.baseUrl, {
+            executionProviders: ['webgpu', 'wasm'],
+            graphOptimizationLevel: 'all'
+        });
+        
+        this.textToSpeech = new TextToSpeech(
+            result.cfgs, 
+            result.textProcessor, 
+            result.dpOrt, 
+            result.textEncOrt, 
+            result.vectorEstOrt, 
+            result.vocoderOrt
+        );
+        
+        // 음성 스타일 로드
+        this.currentStyle = await loadVoiceStyle(['/assets/voice_styles/F1.json']);
+        this.modelLoaded = true;
+    }
+}</code></pre>
+</div>
+<h2 id="tensor-challenge" data-ke-size="size26">🔧 스타일 텐서 문제: 가장 어려웠던 기술적 도전</h2>
+<div class="warning">⚠️ 가장 오래 걸린 문제는 "input 'style_dp' is missing in 'feeds'" 오류였습니다.</div>
+<h3 id="problem-analysis" data-ke-size="size23">문제 원인 분석</h3>
+<p data-ke-size="size16">ONNX 모델이 기대하는 스타일 데이터의 형태가 잘못되어 있었습니다:</p>
+<ul style="list-style-type: disc;" data-ke-list-type="disc">
+<li><b>잘못된 데이터</b>: <code>style.dp = []</code>, <code>style.ttl = []</code> (빈 배열)</li>
+<li><b>올바른 데이터</b>: <code>style.dp = ort.Tensor('float32', data, shape)</code>, <code>style.ttl = ort.Tensor('float32', data, shape)</code></li>
+</ul>
+<div class="code-block">
+<pre class="reasonml"><code>/**
+ * 올바른 스타일 텐서 생성 (공식 예제 기반)
+ */
+async function loadVoiceStyle(voiceStylePaths) {
+    const firstStyle = await fetch(voiceStylePaths[0]).then(r =&gt; r.json());
+    
+    // 텐서 차원 정보 추출
+    const ttlDims = firstStyle.style_ttl.dims;    // [1, 10, 768]
+    const dpDims = firstStyle.style_dp.dims;      // [1, 5, 256]
+    
+    // 텐서 데이터 생성
+    const ttlFlat = new Float32Array(firstStyle.style_ttl.data.flat(Infinity));
+    const dpFlat = new Float32Array(firstStyle.style_dp.data.flat(Infinity));
+    
+    // 올바른 ORT 텐서 형태 생성
+    const ttlTensor = new ort.Tensor('float32', ttlFlat, ttlDims);
+    const dpTensor = new ort.Tensor('float32', dpFlat, dpDims);
+    
+    return new Style(ttlTensor, dpTensor);
+}</code></pre>
+</div>
+<h3 id="solution-result" data-ke-size="size23">해결 결과</h3>
+<p data-ke-size="size16">음성 스타일 파일(F1.json, M1.json)을 Hugging Face에서 다운로드하여 텐서 형태로 처리하니 모든 오류가 해결되었습니다.</p>
+<h2 id="complete-example" data-ke-size="size26">🎮 완전한 웹 구현 예제</h2>
+<h3 id="step1-html" data-ke-size="size23">1단계: 기본 HTML 구조</h3>
+<div class="code-block">
+<pre class="bash" data-ke-language="bash"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+    &lt;head&gt;
+        &lt;meta charset="UTF-8"&gt;
+        &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+        &lt;title&gt;Supertonic - Web Demo&lt;/title&gt;
+        &lt;link rel="stylesheet" href="/style.css"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div class="container"&gt;
+            &lt;h1&gt;🎤 Supertonic&lt;/h1&gt;
+            &lt;p class="subtitle"&gt;Text-to-Speech with ONNX Runtime Web&lt;/p&gt;
+
+            &lt;div id="statusBox" class="status-box"&gt;
+                &lt;div class="status-text-wrapper"&gt;
+                    &lt;div id="statusText"&gt;ℹ️ &lt;strong&gt;Loading models...&lt;/strong&gt;
+                        Please wait...&lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div id="backendBadge" class="backend-badge"&gt;WebAssembly&lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div class="main-content"&gt;
+                &lt;div class="left-panel"&gt;
+                    &lt;div class="section"&gt;
+                        &lt;div class="ref-audio-label"&gt;
+                            &lt;label for="voiceStyleSelect"&gt;Voice Style: &lt;/label&gt;
+                            &lt;span id="voiceStyleInfo"
+                                class="ref-audio-info"&gt;Loading...&lt;/span&gt;
+                        &lt;/div&gt;
+                        &lt;select id="voiceStyleSelect"&gt;
+                            &lt;option value="assets/voice_styles/M1.json"&gt;Male 1 (M1)&lt;/option&gt;
+                            &lt;option value="assets/voice_styles/M2.json"&gt;Male 2 (M2)&lt;/option&gt;
+                            &lt;option value="assets/voice_styles/F1.json"&gt;Female 1 (F1)&lt;/option&gt;
+                            &lt;option value="assets/voice_styles/F2.json"&gt;Female 2 (F2)&lt;/option&gt;
+                        &lt;/select&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class="section"&gt;
+                        &lt;label for="text"&gt;Text to Synthesize:&lt;/label&gt;
+                        &lt;textarea id="text"
+                            placeholder="Enter the text you want to convert to speech..."&gt;This morning, I took a walk in the park, and the sound of the birds and the breeze was so pleasant that I stopped for a long time just to listen.&lt;/textarea&gt;
+                    &lt;/div&gt;
+
+                    &lt;div class="params-grid"&gt;
+                        &lt;div class="section"&gt;
+                            &lt;label for="totalStep"&gt;Total Steps (higher = better
+                                quality):&lt;/label&gt;
+                            &lt;input type="number" id="totalStep" value="5"
+                                min="1" max="50"&gt;
+                        &lt;/div&gt;
+                        
+                        &lt;div class="section"&gt;
+                            &lt;label for="speed"&gt;Speed (0.9-1.5 recommended):&lt;/label&gt;
+                            &lt;input type="number" id="speed" value="1.05"
+                                min="0.5" max="2.0" step="0.05"&gt;
+                        &lt;/div&gt;
+
+                    &lt;/div&gt;
+
+                    &lt;button id="generateBtn"&gt;Generate Speech&lt;/button&gt;
+
+                    &lt;div id="error" class="error"&gt;&lt;/div&gt;
+                &lt;/div&gt;
+
+                &lt;div class="right-panel"&gt;
+                    &lt;div id="results" class="results"&gt;
+                        &lt;div class="results-placeholder"&gt;
+                            &lt;div class="results-placeholder-icon"&gt;🎤&lt;/div&gt;
+                            &lt;p&gt;Generated speech will appear here&lt;/p&gt;
+                        &lt;/div&gt;
+                    &lt;/div&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;script type="module" src="/main.js"&gt;&lt;/script&gt;
+    &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+</div>
+<h3 id="step2-javascript" data-ke-size="size23">2단계: JavaScript 구현</h3>
+<div class="code-block">
+<pre class="javascript"><code>// 전역 TTS 인스턴스
+let ttsEngine = new SupertonicTTS();
+
+// 음성 생성 함수
+async function generateSpeech() {
+    const text = document.getElementById('textInput').value;
+    const btn = document.getElementById('generateBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+    
+    try {
+        btn.disabled = true;
+        btn.textContent = '음성 생성 중...';
+        
+        // TTS 엔진 초기화 (첫 번째 실행 시)
+        if (!ttsEngine.modelLoaded) {
+            await ttsEngine.initialize();
+        }
+        
+        // 음성 생성
+        const result = await ttsEngine.speak(text);
+        
+        // 오디오 재생 (implementation dependent)
+        // 실제 구현에서는 playAudio() 메소드 사용
+        audioPlayer.src = 'data:audio/wav;base64,' + result.base64;
+        audioPlayer.play();
+        
+        console.log('✅ 음성 생성 완료!');
+        
+    } catch (error) {
+        console.error('❌ 음성 생성 실패:', error);
+        alert('음성 생성에 실패했습니다: ' + error.message);
+        
+        // 폴백: Web Speech API
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            speechSynthesis.speak(utterance);
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔊 음성 생성';
+    }
+}</code></pre>
+</div>
+<h3 id="step3-css" data-ke-size="size23">3단계: CSS 스타일링</h3>
+<div class="code-block">
+<pre class="css"><code>/* Supertonic TTS 데모 스타일 */
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+h1 {
+    text-align: center;
+    color: #0066cc;
+    margin-bottom: 20px;
+}
+
+#textInput {
+    width: 100%;
+    height: 120px;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    resize: vertical;
+}
+
+#generateBtn {
+    width: 100%;
+    padding: 12px;
+    background: #0066cc;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin: 10px 0;
+    transition: background 0.3s;
+}
+
+#generateBtn:hover:not(:disabled) {
+    background: #0052a3;
+}
+
+#generateBtn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+#audioPlayer {
+    width: 100%;
+    margin-top: 10px;
+}</code></pre>
+</div>
+<h2 id="performance-comparison" data-ke-size="size26">📊 성능 비교 및 장단점 분석</h2>
+<div style="overflow-x: auto;">
+<table class="performance-table" data-ke-align="alignLeft">
+<thead>
+<tr>
+<th>비교 항목</th>
+<th>Supertonic TTS</th>
+<th>기존 클라우드 TTS</th>
+<th>Web Speech API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><b>속도</b></td>
+<td>⚡ Lightning Fast (10x)</td>
+<td>🌐 네트워크 의존</td>
+<td>⚡ 빠름</td>
+</tr>
+<tr>
+<td><b>품질</b></td>
+<td>🎯 최상급</td>
+<td>🎯 상급</td>
+<td>🎯 중급</td>
+</tr>
+<tr>
+<td><b>프라이버시</b></td>
+<td>🔒 완전 보호</td>
+<td>⚠️ 서버 전송</td>
+<td>🔒 완전 보호</td>
+</tr>
+<tr>
+<td><b>비용</b></td>
+<td>💰 무료</td>
+<td>💸 API 비용</td>
+<td>💰 무료</td>
+</tr>
+<tr>
+<td><b>언어 지원</b></td>
+<td>🌍 다국어</td>
+<td>🌍 최다</td>
+<td>🌍 제한적</td>
+</tr>
+<tr>
+<td><b>브라우저 호환</b></td>
+<td>✅ 모던 브라우저</td>
+<td>✅ 전부</td>
+<td>✅ 전부</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h2 id="lessons-learned" data-ke-size="size26">🎓 실제 구현에서 배운 교훈</h2>
+<h3 id="file-path-lesson" data-ke-size="size23">1. 파일 경로 주의사항</h3>
+<div class="code-block">
+<pre class="javascript"><code>// ❌ 잘못된 경로
+const stylePath = `/assets/tts/voice_styles/${voiceStyle}.json`;
+
+// ✅ 올바른 경로  
+const stylePath = `/assets/voice_styles/${voiceStyle}.json`;</code></pre>
+</div>
+<h3 id="error-handling-lesson" data-ke-size="size23">2. 에러 핸들링의 중요성</h3>
+<div class="code-block">
+<pre class="aspectj"><code>try {
+    const result = await ttsEngine.speak(text);
+    await audioPlayer.play();
+} catch (error) {
+    console.warn('Supertonic TTS 실패, Web Speech API 폴백');
+    // 폴백 메커니즘 구현
+    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(utterance);
+}</code></pre>
+</div>
+<h3 id="optimization-lesson" data-ke-size="size23">3. 모델 초기화 최적화</h3>
+<div class="code-block">
+<pre class="kotlin"><code>// 처음 한 번만 초기화하고 재사용
+class SupertonicTTS {
+    constructor() {
+        this.modelLoaded = false;
+        this.isLoading = false;
+    }
+    
+    async speak(text) {
+        if (!this.modelLoaded &amp;&amp; !this.isLoading) {
+            await this.initialize();
+        }
+        // 음성 생성 로직...
+    }
+}</code></pre>
+</div>
+<h2 id="best-practices" data-ke-size="size26">💡 최적화 팁과 베스트 프랙티스</h2>
+<h3 id="performance-tips" data-ke-size="size23">성능 최적화</h3>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><b>모델 캐싱</b>: 초기화 후 인스턴스 재사용</li>
+<li><b>지연 로딩</b>: 필요할 때만 음성 스타일 로드</li>
+<li><b>메모리 관리</b>: 큰 텐서 데이터 적절히 처리</li>
+</ol>
+<h3 id="ux-improvements" data-ke-size="size23">사용자 경험 개선</h3>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><b>로딩 상태 표시</b>: 사용자에게 진행 상황 피드백</li>
+<li><b>에러 폴백</b>: Web Speech API로 백업 음성 제공</li>
+<li><b>다양한 음성 스타일</b>: F1, M1 등 선택 가능</li>
+</ol>
+<h3 id="developer-tips" data-ke-size="size23">개발자 팁</h3>
+<ol style="list-style-type: decimal;" data-ke-list-type="decimal">
+<li><b>디버깅</b>: 콘솔에서 모델 로딩 상태 모니터링</li>
+<li><b>테스팅</b>: 다양한 브라우저에서 호환성 확인</li>
+<li><b>최적화</b>: WebAssembly vs WebGPU 성능 비교</li>
+</ol>
+<h2 id="conclusion" data-ke-size="size26">🎯 결론: 브라우저 AI 음성 기술의 미래</h2>
+<div class="info">💡 Supertonic TTS는 브라우저 기반 AI 음성 기술의 새로운 표준을 제시하고 있습니다. 클라우드 의존 없이도 고품질 음성을 실시간으로 생성할 수 있다는 것은 프라이버시와 성능을 동시에 만족시키는 혁신적 접근입니다.</div>
+<p data-ke-size="size16">Supertonic TTS를 통해 경험한 기술적 도전을 통해, 온디바이스 AI의 가능성을 실제로 확인했습니다. 특히 <b>Git LFS 처리</b>, <b>ONNX 텐서 형태 문제</b>, <b>에러 폴백 메커니즘</b> 등 실무에서 꼭 필요한 기술들을 완벽히 체득했습니다.</p>
+<div class="concept-block"><b>향후 전망</b>: 브라우저의 AI 처리 능력 향상에 따라, 더 많은 AI 모델들이 온디바이스로 이동할 것입니다. Supertonic TTS는 이러한 흐름의 선구자이자, 개발자들이 반드시 주목해야 할 핵심 기술입니다.</div>
+<p data-ke-size="size16">여러분도 한번 Supertonic TTS를 직접 구현해보시면서, 브라우저에서 AI 음성 기술의 가능성을 직접 경험해보시길 추천드립니다. 음성 인터페이스가 더욱 개인화되고 안전해지는 미래를 만드는 것이 바로 이런 기술들입니다!</p>
+<p data-ke-size="size16">---</p>
+<p data-ke-size="size16"><b>키워드</b>: AI 음성, Supertonic TTS, 온디바이스 AI, 웹 TTS, ONNX, 브라우저 음성 합성, 실시간 음성 처리, 개인정보 보호 AI</p>
