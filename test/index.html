@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companion - Unit Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #666;
+            margin-top: 30px;
+        }
+
+        #test-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .test-controls {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .test-pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .test-fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .test-summary {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .summary-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .summary-failure {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+
+        .test-suite {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .suite-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .suite-title {
+            font-size: 20px;
+            color: #333;
+            margin: 0;
+        }
+
+        .suite-status {
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .suite-status.running {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .suite-status.passed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .suite-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 AI Companion Unit Tests</h1>
+
+        <div class="test-controls">
+            <button id="runAllTests">Run All Tests</button>
+            <button id="clearOutput">Clear Output</button>
+            <button id="runIndividual">Run Individual Tests</button>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+
+        <div id="test-results"></div>
+
+        <div class="test-container">
+            <h2>Test Output</h2>
+            <pre id="test-output"></pre>
+        </div>
+    </div>
+
+    <!-- Test Modules -->
+    <script type="module">
+        import { runner as cacheRunner } from './cache.test.js';
+        import { runner as apiRunner } from './api-client.test.js';
+        import { runner as uiRunner } from './ui-manager.test.js';
+
+        // Test management
+        const testSuites = [
+            { name: 'Cache Module', runner: cacheRunner, id: 'cache' },
+            { name: 'API Client Module', runner: apiRunner, id: 'api-client' },
+            { name: 'UI Manager Module', runner: uiRunner, id: 'ui-manager' }
+        ];
+
+        let currentSuiteIndex = 0;
+        let totalPassed = 0;
+        let totalFailed = 0;
+
+        const testOutput = document.getElementById('test-output');
+        const testResults = document.getElementById('test-results');
+        const progressFill = document.getElementById('progressFill');
+
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+
+        function logToOutput(...args) {
+            testOutput.textContent += args.join(' ') + '\n';
+            testOutput.scrollTop = testOutput.scrollHeight;
+            originalConsoleLog(...args);
+        }
+
+        function errorToOutput(...args) {
+            testOutput.textContent += 'ERROR: ' + args.join(' ') + '\n';
+            testOutput.scrollTop = testOutput.scrollHeight;
+            originalConsoleError(...args);
+        }
+
+        // Create test suite UI
+        function createTestSuiteUI() {
+            testResults.innerHTML = '';
+            testSuites.forEach((suite, index) => {
+                const suiteDiv = document.createElement('div');
+                suiteDiv.className = 'test-suite';
+                suiteDiv.id = `suite-${suite.id}`;
+                suiteDiv.innerHTML = `
+                    <div class="suite-header">
+                        <h3 class="suite-title">${suite.name}</h3>
+                        <span class="suite-status" id="status-${suite.id}">Pending</span>
+                    </div>
+                    <div id="results-${suite.id}"></div>
+                `;
+                testResults.appendChild(suiteDiv);
+            });
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            createTestSuiteUI();
+            resetCounters();
+
+            const runButton = document.getElementById('runAllTests');
+            runButton.disabled = true;
+            runButton.textContent = 'Running Tests...';
+
+            logToOutput('🚀 Starting test execution...\n');
+
+            for (let i = 0; i < testSuites.length; i++) {
+                currentSuiteIndex = i;
+                const suite = testSuites[i];
+
+                updateSuiteStatus(suite.id, 'running', 'Running...');
+                updateProgress((i / testSuites.length) * 100);
+
+                logToOutput(`\n📋 Running ${suite.name}...`);
+
+                try {
+                    // Override console methods for this suite
+                    console.log = logToOutput;
+                    console.error = errorToOutput;
+
+                    const success = await suite.runner.run();
+
+                    // Restore console methods
+                    console.log = originalConsoleLog;
+                    console.error = originalConsoleError;
+
+                    const suitePassed = suite.runner.passed;
+                    const suiteFailed = suite.runner.failed;
+
+                    totalPassed += suitePassed;
+                    totalFailed += suiteFailed;
+
+                    if (success) {
+                        updateSuiteStatus(suite.id, 'passed', `${suitePassed} passed`);
+                        logToOutput(`✅ ${suite.name} completed successfully`);
+                    } else {
+                        updateSuiteStatus(suite.id, 'failed', `${suitePassed} passed, ${suiteFailed} failed`);
+                        logToOutput(`❌ ${suite.name} had failures`);
+                    }
+
+                    updateSuiteResults(suite.id, suitePassed, suiteFailed);
+
+                } catch (error) {
+                    console.error = originalConsoleError;
+                    updateSuiteStatus(suite.id, 'failed', 'Error');
+                    logToOutput(`💥 ${suite.name} crashed: ${error.message}`);
+                    totalFailed++;
+                }
+            }
+
+            updateProgress(100);
+            showSummary();
+
+            runButton.disabled = false;
+            runButton.textContent = 'Run All Tests';
+
+            console.log = originalConsoleLog;
+            console.error = originalConsoleError;
+        }
+
+        // Run individual tests
+        async function runIndividualTests() {
+            const suiteChoice = prompt(`Select test suite to run:\n${testSuites.map((s, i) => `${i + 1}. ${s.name}`).join('\n')}`);
+
+            const suiteIndex = parseInt(suiteChoice) - 1;
+            if (suiteIndex >= 0 && suiteIndex < testSuites.length) {
+                const suite = testSuites[suiteIndex];
+
+                console.log = logToOutput;
+                console.error = errorToOutput;
+
+                logToOutput(`\n📋 Running ${suite.name}...`);
+                const success = await suite.runner.run();
+
+                console.log = originalConsoleLog;
+                console.error = originalConsoleError;
+
+                if (success) {
+                    logToOutput(`✅ ${suite.name} passed all tests`);
+                } else {
+                    logToOutput(`❌ ${suite.name} had ${suite.runner.failed} failures`);
+                }
+            }
+        }
+
+        // Helper functions
+        function resetCounters() {
+            totalPassed = 0;
+            totalFailed = 0;
+            testOutput.textContent = '';
+        }
+
+        function updateSuiteStatus(suiteId, status, text) {
+            const statusEl = document.getElementById(`status-${suiteId}`);
+            statusEl.className = `suite-status ${status}`;
+            statusEl.textContent = text;
+        }
+
+        function updateSuiteResults(suiteId, passed, failed) {
+            const resultsEl = document.getElementById(`results-${suiteId}`);
+            resultsEl.innerHTML = `
+                <div class="test-result ${failed === 0 ? 'test-pass' : 'test-fail'}">
+                    <strong>Results:</strong> ${passed} passed, ${failed} failed
+                </div>
+            `;
+        }
+
+        function updateProgress(percent) {
+            progressFill.style.width = `${percent}%`;
+        }
+
+        function showSummary() {
+            const summary = totalFailed === 0 ?
+                `<div class="test-summary summary-success">
+                    🎉 All tests passed! (${totalPassed} total)
+                </div>` :
+                `<div class="test-summary summary-failure">
+                    ❌ Some tests failed: ${totalPassed} passed, ${totalFailed} failed
+                </div>`;
+
+            testResults.insertAdjacentHTML('beforeend', summary);
+            logToOutput(`\n${totalFailed === 0 ? '🎉' : '❌'} Final Results: ${totalPassed} passed, ${totalFailed} failed\n`);
+        }
+
+        function clearOutput() {
+            testOutput.textContent = '';
+            testResults.innerHTML = '';
+            progressFill.style.width = '0%';
+        }
+
+        // Event listeners
+        document.getElementById('runAllTests').addEventListener('click', runAllTests);
+        document.getElementById('clearOutput').addEventListener('click', clearOutput);
+        document.getElementById('runIndividual').addEventListener('click', runIndividualTests);
+
+        // Auto-run tests on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            logToOutput('Test environment loaded. Click "Run All Tests" to begin.\n');
+        });
+    </script>
+</body>
+</html>

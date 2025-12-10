@@ -804,9 +804,12 @@
         <!-- ONNX Runtime Web for TTS -->
         <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
         <script src="memory-netlify-client.js?v=202411240831"></script>
+        <script src="utils/emotion-topic-utils.js?v=202411240831"></script>
         <script src="js/emotion-diary.js?v=202411240831"></script>
         <script type="module" src="supertonic-tts.js?v=202411241810"></script>
-        <script src="script.js?v=202411241810"></script>
+
+        <!-- 모듈형 메인 애플리케이션 -->
+        <script type="module" src="js/main.js"></script>
         <script>
             // 사용자 ID 표시 초기화 및 설정 모달 열 때마다 업데이트
             function updateUserIdDisplay() {

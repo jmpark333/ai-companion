@@ -1,6 +1,8 @@
 // Netlify Functions를 통한 Memory 클라이언트
 // Supabase + Netlify Functions를 사용한 서버리스 메모리 시스템
 
+import { detectEmotion, detectTopic, extractKeywords } from './utils/emotion-topic-utils.js';
+
 class NetlifyMemoryClient {
     constructor() {
         this.baseURL = '/.netlify/functions/memory';
@@ -330,21 +332,9 @@ class NetlifyMemoryClient {
         }
     }
 
-    // 키워드 추출 헬퍼
+    // 키워드 추출 헬퍼 (utils/emotion-topic-utils.js로 이동)
     extractKeywords(text) {
-        const stopWords = [
-            '은', '는', '이', '가', '을', '를', '에', '와', '과', '의',
-            '도', '만', '에서', '부터', '까지', '으로', '로', '에게',
-            '한테', '께', '요', '네', '요', '습니다', '입니다'
-        ];
-
-        const words = text
-            .replace(/[^\w\s가-힣]/g, ' ')
-            .split(/\s+/)
-            .filter(word => word.length > 1 && !stopWords.includes(word))
-            .slice(0, 5);
-
-        return words;
+        return extractKeywords(text);
     }
 
     // 맥락 구성 헬퍼
@@ -377,45 +367,14 @@ class NetlifyMemoryClient {
         return context;
     }
 
-    // 감정 감지 헬퍼
+    // 감정 감지 헬퍼 (utils/emotion-topic-utils.js로 이동)
     detectEmotion(text) {
-        const emotionKeywords = {
-            '행복': ['좋아', '기쁘', '행복', '감사', '웃', '즐거', '신나', '좋은'],
-            '슬픔': ['슬프', '우울', '눈물', '힘들', '외로', '쓸쓸', '허전'],
-            '화': ['화나', '짜증', '분노', '억울', '답답', '열받', '빡쳐'],
-            '불안': ['걱정', '불안', '두렵', '무서', '초조', '긴장'],
-            '스트레스': ['스트레스', '피곤', '지쳐', '힘들', '버거', '벅차'],
-            '평온': ['평온', '편안', '차분', '안정', '여유', '평화'],
-            '감사': ['감사', '고마', '다행', '축복']
-        };
-
-        for (const [emotion, keywords] of Object.entries(emotionKeywords)) {
-            if (keywords.some(keyword => text.includes(keyword))) {
-                return emotion;
-            }
-        }
-        return null;
+        return detectEmotion(text);
     }
 
-    // 주제 감지 헬퍼
+    // 주제 감지 헬퍼 (utils/emotion-topic-utils.js로 이동)
     detectTopic(text) {
-        const topicKeywords = {
-            '부부관계': ['남편', '아내', '부부', '결혼', '배우자', '와이프'],
-            '자녀교육': ['아이', '자녀', '교육', '육아', '아들', '딸', '학교'],
-            '가족갈등': ['가족', '부모님', '형제', '갈등', '친척', '시댁', '처가'],
-            '직장': ['회사', '직장', '업무', '상사', '동료', '일', '직장인'],
-            '건강': ['건강', '병', '아프', '치료', '의사', '병원', '몸'],
-            '재정': ['돈', '경제', '재정', '빚', '저축', '투자', '월급'],
-            '개인성장': ['공부', '배우', '성장', '발전', '도전', '목표'],
-            '관계': ['친구', '사람', '관계', '소통', '이해', '대화']
-        };
-
-        for (const [topic, keywords] of Object.entries(topicKeywords)) {
-            if (keywords.some(keyword => text.includes(keyword))) {
-                return topic;
-            }
-        }
-        return '일상';
+        return detectTopic(text);
     }
 
     // ========================================
